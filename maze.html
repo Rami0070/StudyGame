@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#8ED8FF">
+  <title>지식 탐험대</title>
+  <!-- Tailwind CSS & Three.js & PDF.js CDN (버전 고정) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    window.addEventListener('error', function(e) {
+      console.warn("Script warning/error:", e.message);
+    });
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@500;700;900&display=swap');
+    /* 햇살 놀이터: 하늘 배경 + 흰 둥근 판 + 눌리는 젤리 버튼. 글씨는 크게, 그림은 더 크게. */
+    :root {
+      --sky1: #8ED8FF; --sky2: #D9F3FF; --grass: #7BD36B; --grass2: #5CBF55;
+      --sun: #FFC531; --sun-d: #E0A100; --tomato: #FF6F59; --tomato-d: #D9483A;
+      --leaf: #46C06A; --leaf-d: #2E9A4F; --sea: #3FA9F5; --sea-d: #1F84CF;
+      --grape: #8E6CEF; --grape-d: #6B47D1; --cream: #FFFBF2; --ink: #3B3355; --ink-soft: #7A7394;
+      --line: #EDE6D6;
+    }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: 'Jua', 'Noto Sans KR', sans-serif; color: var(--ink); background: var(--sky2); user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; overflow: hidden; }
+    button { font-family: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+    button:focus-visible { outline: 4px solid var(--sea); outline-offset: 3px; }
+    .hidden { display: none !important; }
+    .small { font-family: 'Noto Sans KR', sans-serif; font-weight: 700; }
+
+    #app { position: relative; width: 100%; height: 100dvh; overflow: hidden; background: linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 70%); }
+    #gameViewport { position: absolute; inset: 0; }
+    #gameViewport > canvas { display: block; touch-action: none; }
+
+    /* 젤리 버튼 */
+    .jelly { position: relative; border-radius: 26px; color: #fff; font-size: 26px; padding: 14px 28px; min-height: 64px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; background: var(--c, var(--sun)); box-shadow: 0 7px 0 var(--d, var(--sun-d)), 0 12px 22px rgba(59, 51, 85, .18); transition: transform .08s, box-shadow .08s; text-shadow: 0 2px 0 rgba(0,0,0,.12); }
+    .jelly:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--d, var(--sun-d)), 0 5px 10px rgba(59, 51, 85, .18); }
+    .jelly.sun { --c: var(--sun); --d: var(--sun-d); color: #5A3B00; text-shadow: none; }
+    .jelly.tomato { --c: var(--tomato); --d: var(--tomato-d); }
+    .jelly.leaf { --c: var(--leaf); --d: var(--leaf-d); }
+    .jelly.sea { --c: var(--sea); --d: var(--sea-d); }
+    .jelly.grape { --c: var(--grape); --d: var(--grape-d); }
+    .jelly.white { --c: #fff; --d: #DCD3C0; color: var(--ink); text-shadow: none; }
+    .round { width: 64px; height: 64px; padding: 0; border-radius: 50%; font-size: 30px; }
+    .jelly svg { width: 34px; height: 34px; flex: none; }
+    .round svg { width: 30px; height: 30px; }
+
+    .panel { background: var(--cream); border-radius: 36px; box-shadow: 0 10px 0 #E9DFC8, 0 24px 50px rgba(59, 51, 85, .22); }
+    .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); overflow-y: auto; }
+    .overlay.dim { background: rgba(43, 36, 70, .45); }
+    .overlay { z-index: 40; } #charSelectModal, #resultModal { z-index: 50; } #pauseModal { z-index: 60; }
+    .art img, .art svg { width: 100%; height: 100%; display: block; object-fit: contain; }
+
+    /* 하늘 장식 (시작 화면) */
+    .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .9; }
+    .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
+    .cloud::before { width: 55%; height: 160%; left: 15%; top: -70%; }
+    .cloud::after { width: 40%; height: 120%; right: 12%; top: -45%; }
+    .hills { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; }
+
+    /* 시작 화면 */
+    #charSelectModal { background: linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 75%); flex-direction: column; justify-content: flex-start; gap: 18px; }
+    .logo { display: flex; align-items: center; gap: 14px; margin-top: 6px; z-index: 1; }
+    .logo h1 { margin: 0; font-size: clamp(40px, 7vw, 64px); color: #fff; letter-spacing: 2px; -webkit-text-stroke: 3px var(--sea-d); paint-order: stroke fill; text-shadow: 0 6px 0 var(--sea-d); font-weight: 400; }
+    .step-title { font-size: 26px; color: var(--ink); display: flex; align-items: center; gap: 10px; }
+    .step-title b { width: 40px; height: 40px; border-radius: 50%; background: var(--tomato); color: #fff; display: grid; place-items: center; font-weight: 400; font-size: 22px; }
+    .start-card { width: min(980px, 100%); padding: 22px 24px 26px; display: grid; gap: 18px; z-index: 1; }
+    .scn-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+    .scn { border-radius: 26px; background: #fff; padding: 10px 6px 12px; display: grid; justify-items: center; gap: 4px; box-shadow: 0 6px 0 #E3DAC6; border: 4px solid transparent; transition: transform .12s; }
+    .scn .art { width: 100%; aspect-ratio: 1; max-width: 108px; }
+    .scn span { font-size: 21px; }
+    .scn[aria-pressed="true"] { border-color: var(--sun); background: #FFF4CF; transform: translateY(-4px) rotate(-1.5deg); box-shadow: 0 10px 0 var(--sun-d); }
+    .hero-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .hero-card { border-radius: 30px; background: #fff; padding: 12px 8px 14px; display: grid; justify-items: center; gap: 4px; box-shadow: 0 6px 0 #E3DAC6; border: 5px solid transparent; position: relative; transition: transform .12s; }
+    .hero-card .art { width: min(150px, 100%); aspect-ratio: 1; }
+    .hero-card span { font-size: 24px; }
+    .hero-card.on { border-color: var(--leaf); background: #EAFBE6; transform: translateY(-5px); box-shadow: 0 11px 0 var(--leaf-d); }
+    .hero-card.on::after { content: "✔"; position: absolute; top: -12px; right: -10px; width: 44px; height: 44px; border-radius: 50%; background: var(--leaf); color: #fff; display: grid; place-items: center; font-size: 24px; box-shadow: 0 4px 0 var(--leaf-d); }
+    .start-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .scn-intro { display: flex; align-items: center; gap: 12px; font-size: 20px; color: var(--ink-soft); min-width: 0; flex: 1 1 300px; }
+    .best { font-size: 30px; letter-spacing: 2px; }
+    #startBtn { font-size: 34px; padding: 16px 44px; min-height: 80px; }
+
+    /* 게임 중 HUD */
+    .hud { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); z-index: 10; pointer-events: none; }
+    .hud > * { pointer-events: auto; }
+    .doors { display: flex; gap: 6px; background: rgba(255,255,255,.92); padding: 10px 14px; border-radius: 999px; box-shadow: 0 5px 0 rgba(0,0,0,.08); }
+    .doors i { width: 22px; height: 22px; border-radius: 7px; background: #E6E0F2; display: block; }
+    .doors i.on { background: var(--leaf); box-shadow: inset 0 -4px 0 var(--leaf-d); }
+    .doors i.next { background: var(--sun); box-shadow: inset 0 -4px 0 var(--sun-d); animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 50% { transform: scale(1.18); } }
+    .pill { background: #fff; border-radius: 999px; padding: 6px 18px 6px 8px; display: flex; align-items: center; gap: 8px; font-size: 30px; box-shadow: 0 5px 0 rgba(0,0,0,.08); }
+    .pill svg { width: 40px; height: 40px; }
+    .hud-right { display: flex; gap: 12px; align-items: center; }
+    .notice { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(22px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: rgba(255,255,255,.95); border-radius: 999px; padding: 10px 22px; font-size: 22px; box-shadow: 0 5px 0 rgba(0,0,0,.08); pointer-events: none; max-width: calc(100% - 440px); text-align: center; }
+    @media (max-width: 900px) { .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); max-width: calc(100% - 32px); font-size: 18px; } }
+    #minimapWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 22px; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
+    #minimap { display: block; width: 168px; height: 136px; border-radius: 14px; }
+    #dpad { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 20; display: none; grid-template-columns: repeat(3, 76px); grid-template-rows: repeat(3, 76px); gap: 6px; }
+    @media (pointer: coarse) { #dpad { display: grid; } #minimap { width: 126px; height: 102px; } }
+    #dpad button { border-radius: 24px; font-size: 32px; touch-action: none; padding: 0; min-height: 0; }
+    #dpad .act { font-size: 22px; }
+
+    /* 이야기 말풍선 */
+    .story { width: min(820px, 100%); display: flex; align-items: flex-end; gap: 16px; margin-top: auto; }
+    .story .who { width: 150px; flex: none; text-align: center; }
+    .story .who .art { width: 150px; height: 150px; background: #fff; border-radius: 50%; padding: 12px; box-shadow: 0 8px 0 #E3DAC6; box-sizing: border-box; display: grid; place-items: center; font-size: 84px; }
+    .story .who span { display: inline-block; margin-top: 8px; background: var(--grape); color: #fff; border-radius: 999px; padding: 4px 14px; font-size: 18px; }
+    .bubble { flex: 1; position: relative; padding: 22px 26px 20px; display: grid; gap: 14px; min-width: 0; }
+    .bubble::before { content: ""; position: absolute; left: -22px; bottom: 48px; border: 14px solid transparent; border-right: 22px solid var(--cream); border-left: 0; }
+    .bubble p { margin: 0; font-size: 25px; line-height: 1.5; word-break: keep-all; }
+    .bubble .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .tag { background: #FFF0C7; color: #8A5A00; border-radius: 999px; padding: 4px 14px; font-size: 18px; }
+
+    /* 퀴즈 */
+    .quiz { width: min(860px, 100%); padding: 22px 26px 24px; display: grid; gap: 18px; }
+    .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .doorbadge { display: flex; align-items: center; gap: 10px; font-size: 24px; }
+    .doorbadge b { width: 52px; height: 52px; border-radius: 16px; background: var(--grape); color: #fff; display: grid; place-items: center; font-weight: 400; font-size: 26px; box-shadow: 0 5px 0 var(--grape-d); }
+    #quizHintTag { display: none; }
+    #quizPrompt { margin: 0; font-size: clamp(24px, 3.2vw, 32px); line-height: 1.45; word-break: keep-all; text-align: center; }
+    #quizPrompt strong, #quizPrompt b { color: var(--tomato-d); font-weight: 400; }
+    #quizPrompt .quote { display: block; margin-top: 10px; background: #fff; border-radius: 22px; padding: 14px 18px; font-size: .86em; color: var(--ink); box-shadow: inset 0 0 0 3px var(--line); }
+    #quizOptions { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    #quizOptions.one { grid-template-columns: 1fr; }
+    .opt { min-height: 92px; font-size: 32px; border-radius: 26px; padding: 12px 18px; }
+    .opt.long { font-size: 21px; min-height: 76px; justify-content: flex-start; text-align: left; line-height: 1.35; font-family: 'Noto Sans KR', sans-serif; font-weight: 700; }
+    .opt .n { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.35); display: grid; place-items: center; font-size: 22px; flex: none; }
+    .opt.ox { min-height: 150px; font-size: 92px; line-height: 1; }
+    .opt[disabled] { cursor: default; }
+    .opt-wrong { filter: grayscale(1); opacity: .45; transform: translateY(5px); box-shadow: 0 2px 0 rgba(0,0,0,.15) !important; }
+    .opt-right { animation: pop .45s cubic-bezier(.2, 1.8, .4, 1); outline: 6px solid #fff; box-shadow: 0 0 0 12px var(--leaf), 0 7px 0 var(--d) !important; }
+    @keyframes pop { 0% { transform: scale(.9); } 100% { transform: scale(1); } }
+    .quiz-bottom { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    #quizHintBox { background: #FFF0C7; border-radius: 20px; padding: 12px 18px; font-size: 22px; text-align: center; }
+    #quizHintBox b { color: var(--tomato-d); font-weight: 400; letter-spacing: 4px; font-size: 30px; }
+    #quizFeedback { text-align: center; font-size: 30px; }
+    #quizFeedback .mean { display: block; font-size: 19px; color: var(--ink-soft); margin-top: 4px; font-family: 'Noto Sans KR', sans-serif; font-weight: 700; }
+    .shake { animation: shake .4s ease-in-out; }
+    @keyframes shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+
+    /* 결과 */
+    .result { width: min(760px, 100%); padding: 24px 26px 26px; display: grid; gap: 16px; justify-items: center; text-align: center; }
+    .result .art { width: 150px; height: 150px; }
+    .result h2 { margin: 0; font-size: 44px; font-weight: 400; color: var(--tomato-d); }
+    #resultStars { font-size: 70px; letter-spacing: 8px; line-height: 1; }
+    #resultStars span { display: inline-block; animation: starin .5s cubic-bezier(.2, 1.8, .4, 1) both; }
+    #resultStars span:nth-child(2) { animation-delay: .25s; } #resultStars span:nth-child(3) { animation-delay: .5s; }
+    @keyframes starin { from { transform: scale(0) rotate(-40deg); } to { transform: none; } }
+    .star-on { color: var(--sun); text-shadow: 0 5px 0 var(--sun-d); } .star-off { color: #E4DDCE; }
+    .stats { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .stat { background: #fff; border-radius: 22px; padding: 8px 18px; display: flex; align-items: center; gap: 8px; font-size: 26px; box-shadow: 0 5px 0 #E3DAC6; }
+    .stat svg { width: 34px; height: 34px; }
+    #reviewWordList { width: 100%; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-height: 190px; overflow-y: auto; padding: 4px; }
+    .wordchip { background: #fff; border-radius: 18px; padding: 8px 16px; font-size: 24px; box-shadow: 0 4px 0 #E3DAC6; display: flex; align-items: center; gap: 8px; }
+    .wordchip.miss { background: #FFE8E3; box-shadow: 0 4px 0 #F6B9AC; }
+    .wordchip button { width: 34px; height: 34px; border-radius: 50%; background: var(--sea); color: #fff; display: grid; place-items: center; }
+    .wordchip button svg { width: 18px; height: 18px; }
+    #resultSummary { margin: 0; font-size: 20px; color: var(--ink-soft); }
+    .btnrow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+    /* 일시정지 */
+    .pause { width: min(520px, 100%); padding: 26px; display: grid; gap: 14px; }
+    .pause h2 { margin: 0 0 4px; text-align: center; font-weight: 400; font-size: 38px; }
+    .pause .jelly { width: 100%; justify-content: flex-start; padding-left: 24px; }
+    .teacher { border-top: 3px dashed var(--line); padding-top: 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; color: var(--ink-soft); }
+    .teacher summary { cursor: pointer; font-family: 'Jua'; font-size: 18px; color: var(--ink-soft); }
+    .teacher .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .teacher .mini { font-family: 'Jua'; font-size: 16px; padding: 10px 14px; border-radius: 14px; background: #fff; box-shadow: 0 4px 0 #E3DAC6; cursor: pointer; }
+
+    #loadingScreen { position: absolute; inset: 0; z-index: 90; background: linear-gradient(180deg, var(--sky1), var(--sky2)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 30px; }
+    #loadingScreen .art { width: 160px; height: 160px; animation: bob 1s ease-in-out infinite; }
+    @keyframes bob { 50% { transform: translateY(-14px); } }
+
+    .toast { position: fixed; left: 50%; top: calc(86px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); z-index: 100; max-width: calc(100% - 32px); background: #fff; color: var(--ink); font-size: 22px; padding: 12px 24px; border-radius: 999px; box-shadow: 0 6px 0 rgba(0,0,0,.12); }
+    .toast.warn { background: #FFE8E3; }
+
+    @media (max-width: 760px) {
+      .scn-row { grid-template-columns: repeat(3, 1fr); }
+      .hero-card .art { width: 100px; }
+      .story { flex-direction: column; align-items: stretch; }
+      .story .who { display: flex; align-items: center; gap: 12px; width: auto; }
+      .story .who .art { width: 90px; height: 90px; font-size: 50px; }
+      .bubble::before { display: none; }
+      .opt { font-size: 26px; min-height: 76px; }
+      .opt.ox { min-height: 110px; font-size: 70px; }
+      .notice { font-size: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 3D 미로 -->
+  <div id="gameViewport"></div>
+
+  <!-- 게임 중 화면 위 표시 -->
+  <div class="hud" id="hud">
+    <button type="button" class="jelly white round" onclick="openPause()" aria-label="멈춤 메뉴">
+      <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4.5" height="16" rx="1.5"/><rect x="13.5" y="4" width="4.5" height="16" rx="1.5"/></svg>
+    </button>
+    <div class="doors" id="doorDots" aria-label="연 문 개수"></div>
+    <div class="hud-right">
+      <div class="pill" aria-label="모은 별"><span class="art" data-art="star" style="width:40px;height:40px"></span><span id="starText">0</span></div>
+      <button type="button" class="jelly white round" id="soundBtn" onclick="toggleSound()" aria-label="소리 켜기/끄기"></button>
+    </div>
+  </div>
+  <div class="notice" id="noticeBox"><span id="viewModeNotice">문으로 가 보세요!</span></div>
+  <div id="minimapWrap"><canvas id="minimap" width="168" height="136" aria-label="지도"></canvas></div>
+
+  <div id="dpad">
+    <div></div>
+    <button type="button" class="jelly sea" data-dir="up" aria-label="위로">▲</button>
+    <div></div>
+    <button type="button" class="jelly sea" data-dir="left" aria-label="왼쪽으로">◀</button>
+    <button type="button" class="jelly sun act" data-dir="action" aria-label="문 열기">열기</button>
+    <button type="button" class="jelly sea" data-dir="right" aria-label="오른쪽으로">▶</button>
+    <div></div>
+    <button type="button" class="jelly sea" data-dir="down" aria-label="아래로">▼</button>
+    <div></div>
+  </div>
+
+  <!-- 화면 밖에서 쓰는 이전 표시들 (기능 유지용) -->
+  <div class="hidden">
+    <span id="themeBadge"></span><span id="gameTitle"></span><span id="questStagePhase"></span>
+    <span id="currentHeroName"></span><span id="progressText"></span><span id="timerText"></span>
+    <span id="modalScenarioBadge"></span><span id="modalScenarioSpeaker"></span><span id="modalScenarioTitle"></span><span id="modalScenarioAvatar"></span>
+    <span id="storyStageBadge"></span><span id="quizTypeBadge"></span><span id="resultTime"></span><span id="resultFirst"></span><span id="resultStarCount"></span><span id="resultScenarioTitle"></span>
+  </div>
+
+  <!-- 1. 시작: 모험 고르기 + 친구 고르기 -->
+  <div id="charSelectModal" class="overlay" style="display:flex">
+    <div class="cloud" style="width:180px;height:56px;left:6%;top:9%"></div>
+    <div class="cloud" style="width:130px;height:42px;right:9%;top:16%"></div>
+    <svg class="hills" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 Q200 40 420 110 T820 90 T1200 100 V200 H0Z" fill="#9BE08A"/><path d="M0 160 Q300 90 600 150 T1200 140 V200 H0Z" fill="#7BD36B"/></svg>
+    <div class="logo"><span class="art" data-art="compass" style="width:84px;height:84px"></span><h1>지식 탐험대</h1></div>
+    <div class="panel start-card">
+      <div class="step-title"><b>1</b>어디로 갈까?</div>
+      <div class="scn-row" id="scenarioPicker"></div>
+      <div class="step-title"><b>2</b>누구랑 갈까?</div>
+      <div class="hero-row" id="heroRow"></div>
+      <div class="start-row">
+        <div class="scn-intro">
+          <button type="button" class="jelly sea round" id="introSay" aria-label="이야기 듣기"></button>
+          <span id="modalBestRecord" class="best"></span>
+          <span id="modalScenarioIntro" class="hidden"></span>
+        </div>
+        <button type="button" id="startBtn" class="jelly tomato" onclick="confirmHeroAndStart()">출발! <span style="font-size:30px">▶</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 문을 열면 나오는 이야기 -->
+  <div id="storyBubbleModal" class="overlay dim hidden" style="align-items:flex-end">
+    <div class="story">
+      <div class="who"><div class="art" id="storyAvatar"></div><span id="storySpeaker"></span></div>
+      <div class="panel bubble">
+        <div class="row"><span class="tag" id="storyPhaseLabel"></span><button type="button" class="jelly sea round" id="storySay" aria-label="듣기" style="width:52px;height:52px"></button></div>
+        <p id="storyContent"></p>
+        <div class="row" style="justify-content:flex-end"><button type="button" id="storyNextBtn" class="jelly leaf">계속 ▶</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 문제 -->
+  <div id="quizModal" class="overlay dim hidden">
+    <div id="quizCard" class="panel quiz" role="dialog" aria-modal="true" aria-labelledby="quizPrompt">
+      <div class="quiz-top">
+        <div class="doorbadge"><b id="quizStageNumber">1</b><span>번 문</span></div>
+        <span id="quizHintTag"></span>
+        <button type="button" class="jelly sea round" id="quizSay" aria-label="문제 듣기"></button>
+      </div>
+      <p id="quizPrompt"></p>
+      <div id="quizOptions"></div>
+      <div id="quizHintBox" class="hidden"></div>
+      <div id="quizFeedback" class="hidden" aria-live="polite"></div>
+      <div class="quiz-bottom">
+        <button type="button" id="quizLaterBtn" class="jelly white" onclick="closeQuizForLater()" style="font-size:20px;min-height:54px">↩ 나중에</button>
+        <button type="button" id="quizHintBtn" class="jelly sun" onclick="showQuizHint()" style="font-size:20px;min-height:54px"><span class="art" data-art="bulb" style="width:30px;height:30px"></span>힌트</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 멈춤 메뉴 -->
+  <div id="pauseModal" class="overlay dim hidden">
+    <div class="panel pause" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+      <h2 id="pauseTitle">잠깐 쉬기</h2>
+      <button type="button" class="jelly leaf" onclick="closePause()">▶ 계속하기</button>
+      <button type="button" class="jelly sea" onclick="restartSameScenario()">↻ 처음부터 다시</button>
+      <button type="button" class="jelly grape" onclick="backToTitle()">⌂ 첫 화면</button>
+      <button type="button" class="jelly white" onclick="toggleSound()" id="pauseSoundBtn">소리 끄기</button>
+      <details class="teacher">
+        <summary>선생님 메뉴</summary>
+        <p>교재 PDF에서 “낱말: 뜻” 또는 “○○이란 ~이다.” 문장을 찾아 문제를 만들어요. 4개 이상 찾으면 새 문제로 바뀌어요.</p>
+        <div class="row">
+          <label class="mini">교재 PDF 불러오기<input type="file" id="pdfInput" accept="application/pdf" class="hidden"></label>
+          <button type="button" class="mini" onclick="resetKnowledgeDB()">기본 문제로</button>
+        </div>
+        <div id="pdfStatus" style="margin-top:8px"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 4. 탈출 성공 -->
+  <div id="resultModal" class="overlay dim hidden">
+    <div class="panel result">
+      <span class="art" data-art="trophy"></span>
+      <h2>탈출 성공!</h2>
+      <div id="resultStars" aria-live="polite"></div>
+      <div class="stats">
+        <div class="stat"><span class="art" data-art="clock" style="width:34px;height:34px"></span><span id="resultTimeBig"></span></div>
+        <div class="stat"><span class="art" data-art="star" style="width:34px;height:34px"></span><span id="resultStarBig"></span></div>
+      </div>
+      <p id="resultSummary"></p>
+      <div id="reviewWordList"></div>
+      <div class="btnrow">
+        <button type="button" class="jelly leaf" onclick="restartSameScenario()">↻ 한 번 더</button>
+        <button type="button" class="jelly sea" onclick="restartWithNewMaze()">⌂ 다른 모험</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loadingScreen"><span class="art" data-art="compass"></span>지도를 펼치는 중…</div>
+</div>
+
+  <script>
+    /* ───── 그림: 직접 그린 SVG. assets/<이름>.png 를 넣으면 그 그림으로 바뀜 ───── */
+    const ART = {
+      star: `<svg viewBox="0 0 64 64"><path d="M32 5l8.3 17 18.7 2.7-13.5 13.2 3.2 18.6L32 47.7 15.3 56.5l3.2-18.6L5 24.7 23.7 22z" fill="#FFC531" stroke="#E0A100" stroke-width="4" stroke-linejoin="round"/><path d="M24 26l5-1" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".7"/></svg>`,
+      bulb: `<svg viewBox="0 0 64 64"><path d="M32 6a19 19 0 0 0-11 34.5V47h22v-6.5A19 19 0 0 0 32 6z" fill="#FFF3B0" stroke="#8A5A00" stroke-width="4"/><rect x="22" y="47" width="20" height="9" rx="4" fill="#8A5A00"/><path d="M26 26a7 7 0 0 1 7-7" stroke="#8A5A00" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+      clock: `<svg viewBox="0 0 64 64"><circle cx="32" cy="34" r="24" fill="#fff" stroke="#3FA9F5" stroke-width="6"/><path d="M32 20v15l10 6" stroke="#3B3355" stroke-width="5" stroke-linecap="round" fill="none"/><rect x="26" y="3" width="12" height="8" rx="3" fill="#3FA9F5"/></svg>`,
+      speaker: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/></svg>`,
+      mute: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h4l5 4v-13l-5 4z" fill="currentColor"/><path d="M17 9.5l5 5M22 9.5l-5 5"/></svg>`,
+      compass: `<svg viewBox="0 0 120 120"><circle cx="60" cy="62" r="50" fill="#FF6F59" stroke="#D9483A" stroke-width="6"/><circle cx="60" cy="62" r="38" fill="#FFFBF2"/><path d="M60 30l10 32-10 32-10-32z" fill="#3FA9F5"/><path d="M60 30l10 32H50z" fill="#FF6F59"/><circle cx="60" cy="62" r="6" fill="#3B3355"/><circle cx="60" cy="10" r="8" fill="#FFC531" stroke="#E0A100" stroke-width="4"/></svg>`,
+      trophy: `<svg viewBox="0 0 120 120"><path d="M34 14h52v26a26 26 0 0 1-52 0z" fill="#FFC531" stroke="#E0A100" stroke-width="5"/><path d="M34 22H18a14 14 0 0 0 16 22M86 22h16a14 14 0 0 1-16 22" fill="none" stroke="#E0A100" stroke-width="6"/><rect x="52" y="64" width="16" height="20" fill="#E0A100"/><rect x="34" y="84" width="52" height="16" rx="5" fill="#FF6F59"/><path d="M60 24l4 9 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1z" fill="#fff"/></svg>`,
+      // 모험 그림
+      detective: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FFE7A3"/><circle cx="52" cy="52" r="26" fill="#D9F3FF" stroke="#3B3355" stroke-width="8"/><path d="M71 71l26 26" stroke="#3B3355" stroke-width="12" stroke-linecap="round"/><path d="M40 46a13 13 0 0 1 12-10" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/></svg>`,
+      chronos: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#C9F0FF"/><circle cx="60" cy="62" r="34" fill="#fff" stroke="#1F84CF" stroke-width="8"/><path d="M60 42v21l14 9" stroke="#3B3355" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M86 28l8-8M34 28l-8-8" stroke="#1F84CF" stroke-width="8" stroke-linecap="round"/></svg>`,
+      magic_school: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#E4DBFF"/><path d="M26 92l50-50" stroke="#6B47D1" stroke-width="10" stroke-linecap="round"/><path d="M80 18l5 11 12 2-9 8 2 12-10-6-11 6 2-12-9-8 12-2z" fill="#FFC531" stroke="#E0A100" stroke-width="3" stroke-linejoin="round"/><circle cx="36" cy="40" r="5" fill="#8E6CEF"/><circle cx="88" cy="78" r="6" fill="#8E6CEF"/></svg>`,
+      cyber_hacker: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#CFF5DF"/><rect x="22" y="30" width="76" height="50" rx="8" fill="#3B3355"/><rect x="29" y="37" width="62" height="36" rx="4" fill="#46C06A"/><path d="M60 44l12 5v8c0 7-5 11-12 13-7-2-12-6-12-13v-8z" fill="#fff"/><rect x="14" y="80" width="92" height="10" rx="5" fill="#7A7394"/></svg>`,
+      pyramid: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FFE3C2"/><circle cx="86" cy="34" r="12" fill="#FFC531"/><path d="M14 94L58 30l46 64z" fill="#F5B94C" stroke="#C9822A" stroke-width="5" stroke-linejoin="round"/><path d="M58 30l10 64H48z" fill="#E09A35"/><path d="M30 72h56M40 58h36" stroke="#C9822A" stroke-width="4"/></svg>`,
+      random: `<svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="56" fill="#FFD9D3"/><rect x="28" y="28" width="64" height="64" rx="16" fill="#fff" stroke="#D9483A" stroke-width="6" transform="rotate(-10 60 60)"/><circle cx="46" cy="48" r="7" fill="#FF6F59"/><circle cx="62" cy="62" r="7" fill="#FF6F59"/><circle cx="76" cy="74" r="7" fill="#FF6F59"/></svg>`,
+      // 친구들
+      explorer: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="150" rx="44" ry="7" fill="#000" opacity=".08"/><path d="M48 150v-34a32 32 0 0 1 64 0v34z" fill="#3FA9F5"/><rect x="62" y="112" width="36" height="10" rx="5" fill="#C9822A"/><circle cx="80" cy="72" r="40" fill="#FFD7B5"/><path d="M34 52q46-14 92 0l-6 8q-40-10-80 0z" fill="#C9822A"/><path d="M50 50q4-30 30-32 26 2 30 32z" fill="#E09A35"/><rect x="50" y="42" width="60" height="9" fill="#8A5A00"/><circle cx="80" cy="34" r="7" fill="#FFF3B0" stroke="#E0A100" stroke-width="3"/><circle cx="65" cy="76" r="6" fill="#3B3355"/><circle cx="95" cy="76" r="6" fill="#3B3355"/><circle cx="67" cy="74" r="2" fill="#fff"/><circle cx="97" cy="74" r="2" fill="#fff"/><circle cx="56" cy="88" r="6" fill="#FF9C8A" opacity=".7"/><circle cx="104" cy="88" r="6" fill="#FF9C8A" opacity=".7"/><path d="M72 92q8 7 16 0" stroke="#3B3355" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+      cyberbot: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="150" rx="44" ry="7" fill="#000" opacity=".08"/><rect x="50" y="110" width="60" height="40" rx="14" fill="#7A8CA8"/><circle cx="80" cy="128" r="7" fill="#46C06A"/><path d="M80 34V18" stroke="#7A8CA8" stroke-width="6" stroke-linecap="round"/><circle cx="80" cy="14" r="8" fill="#FF6F59"/><rect x="34" y="34" width="92" height="76" rx="26" fill="#DDE6F2" stroke="#7A8CA8" stroke-width="5"/><rect x="46" y="52" width="68" height="34" rx="17" fill="#3B3355"/><circle cx="66" cy="69" r="8" fill="#5CF2FF"/><circle cx="94" cy="69" r="8" fill="#5CF2FF"/><rect x="26" y="62" width="10" height="22" rx="5" fill="#7A8CA8"/><rect x="124" y="62" width="10" height="22" rx="5" fill="#7A8CA8"/><path d="M70 96q10 6 20 0" stroke="#7A8CA8" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`,
+      wizard: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="150" rx="44" ry="7" fill="#000" opacity=".08"/><path d="M44 150l10-40h52l10 40z" fill="#8E6CEF"/><circle cx="80" cy="82" r="36" fill="#FFE0C7"/><path d="M36 64h88l-10 8H46z" fill="#6B47D1"/><path d="M48 66L84 6l28 60z" fill="#8E6CEF"/><path d="M84 6l-6 22" stroke="#6B47D1" stroke-width="5"/><path d="M76 34l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#FFC531"/><circle cx="67" cy="86" r="6" fill="#3B3355"/><circle cx="93" cy="86" r="6" fill="#3B3355"/><circle cx="69" cy="84" r="2" fill="#fff"/><circle cx="95" cy="84" r="2" fill="#fff"/><circle cx="58" cy="98" r="6" fill="#FF9C8A" opacity=".7"/><circle cx="102" cy="98" r="6" fill="#FF9C8A" opacity=".7"/><path d="M73 101q7 6 14 0" stroke="#3B3355" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M124 100v46" stroke="#C9822A" stroke-width="6" stroke-linecap="round"/><circle cx="124" cy="96" r="9" fill="#FF8AD8"/></svg>`
+    };
+    function art(name) {
+      return `<img src="assets/${name}.png" alt="" style="display:none" onload="this.style.display='block';this.nextElementSibling&&this.nextElementSibling.remove()" onerror="this.remove()">${ART[name] || ""}`;
+    }
+    function paintArt(root) {
+      (root || document).querySelectorAll('[data-art]').forEach(el => { if (!el.dataset.painted) { el.innerHTML = art(el.dataset.art); el.dataset.painted = "1"; } });
+    }
+    paintArt();
+  </script>
+
+  <script>
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // 한글 초성 추출 함수
+    const CHOSUNG = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+    function getChosung(str) {
+      let result = "";
+      for (let i = 0; i < str.length; i++) {
+        const code = str.charCodeAt(i) - 44032;
+        if (code >= 0 && code <= 11171) {
+          result += CHOSUNG[Math.floor(code / 588)];
+        } else {
+          result += str[i];
+        }
+      }
+      return result;
+    }
+
+    // 기본 탑재 융합 개념 데이터베이스
+    const DEFAULT_KNOWLEDGE_DB = [
+      {
+        id: 1,
+        word: "성실",
+        chosung: "ㅅㅅ",
+        category: "인성·도덕",
+        meaning: "정성스럽고 참되어 거짓이나 게으름이 없음",
+        sentence: "어려운 과제라도 매일 (      )하게 노력하면 좋은 결실을 맺는다.",
+        relationWord: "근면",
+        antonym: "나태",
+        misconceptFalse: "'성실'이란 노력하지 않고 운에만 맡기는 태도를 뜻한다.",
+        applicationScenario: "청소 당번인 민우가 아무도 보지 않아도 묵묵히 맡은 구역을 깨끗이 청소했다. 이것은 어떤 가치를 실천한 것일까?"
+      },
+      {
+        id: 2,
+        word: "가설",
+        chosung: "ㄱㅅ",
+        category: "과학 탐구",
+        meaning: "어떤 사실이나 현상을 과학적으로 설명하기 위해 실험 전에 임시로 세운 설명",
+        sentence: "탐구 실험을 시작하기 전에 현상의 원인에 대한 타당한 (      )을 세웠다.",
+        relationWord: "검증",
+        antonym: "정설",
+        misconceptFalse: "'가설'은 실험을 하기도 전에 이미 완벽하게 증명된 불변의 법칙이다.",
+        applicationScenario: "온도가 높을수록 식물이 더 빨리 자랄 것이라고 예상하고 온도별 화분을 준비했다. 이때 세운 예상을 무엇이라 하는가?"
+      },
+      {
+        id: 3,
+        word: "협동",
+        chosung: "ㅎㄷ",
+        category: "사회·공동체",
+        meaning: "공동의 목표를 달성하기 위해 서로 마음과 힘을 하나로 합침",
+        sentence: "마을 주민들이 서로 (      )하여 수해를 입은 이웃을 도왔다.",
+        relationWord: "협력",
+        antonym: "경쟁",
+        misconceptFalse: "'협동'은 다른 사람의 의견을 무시하고 혼자서만 모든 일을 처리하는 것이다.",
+        applicationScenario: "학급 환경미화에서 친구들과 역할을 분담하고 힘을 모아 교실을 멋지게 꾸몄다. 이 활동에 해당하는 개념은?"
+      },
+      {
+        id: 4,
+        word: "광합성",
+        chosung: "ㄱㅎㅅ",
+        category: "생명 과학",
+        meaning: "녹색 식물이 빛 에너지를 이용하여 이산화 탄소와 물로부터 유기 양분과 산소를 만드는 과정",
+        sentence: "식물의 잎에 있는 엽록체에서 빛을 흡수하여 (      )이 활발하게 일어난다.",
+        relationWord: "엽록체",
+        antonym: "호흡",
+        misconceptFalse: "식물은 밤에 햇빛이 전혀 없어도 왕성하게 광합성을 수행한다.",
+        applicationScenario: "밀폐된 유리병 속 식물에 햇빛을 쪼여주었더니 산소가 발생하여 촛불이 오래 탔다. 이와 직접 관련된 작용은?"
+      },
+      {
+        id: 5,
+        word: "민주주의",
+        chosung: "ㅁㅈㅈㅇ",
+        category: "사회·정치",
+        meaning: "국가의 주권이 국민에게 있고 국민을 위하여 정치가 이루어지는 제도",
+        sentence: "모든 시민이 자유롭게 투표에 참여하는 것은 (      )의 소중한 기본 권리이다.",
+        relationWord: "주권",
+        antonym: "독재",
+        misconceptFalse: "'민주주의' 사회에서는 특정 한 사람이 법과 규칙을 마음대로 정한다.",
+        applicationScenario: "학급 회의에서 다수결의 원칙을 지키며 소수 의견도 존중하여 규칙을 정했다. 이는 어떤 원리를 실천한 것인가?"
+      },
+      {
+        id: 6,
+        word: "창의",
+        chosung: "ㅊㅇ",
+        category: "사고력",
+        meaning: "기존의 방식을 벗어나 새롭고 독창적인 생각이나 물건을 만들어 냄",
+        sentence: "고정관념에서 벗어나 색다른 시각으로 문제를 해결하는 (      )적인 태도가 돋보였다.",
+        relationWord: "독창성",
+        antonym: "모방",
+        misconceptFalse: "'창의'는 남이 해놓은 방식을 그대로 베끼고 따라 하는 것을 뜻한다.",
+        applicationScenario: "버려지는 페트병을 활용해 자동으로 물을 주는 친환경 화분을 발명했다. 어떤 역량이 가장 크게 발휘된 사례인가?"
+      },
+      {
+        id: 7,
+        word: "부력",
+        chosung: "ㅂㄹ",
+        category: "물리 과학",
+        meaning: "기체나 액체 속에 있는 물체가 중력에 반대 방향으로 위로 밀려 올라가는 힘",
+        sentence: "무거운 쇠로 만든 거대한 배가 바다 위에 뜰 수 있는 까닭은 (      ) 때문이다.",
+        relationWord: "중력",
+        antonym: "침강",
+        misconceptFalse: "물에 뜨는 모든 물체에는 중력이 전혀 작용하지 않는다.",
+        applicationScenario: "물속에 손을 넣고 비치볼을 아래로 누르면 손끝으로 튕겨 올라오는 힘이 느껴진다. 이 힘의 명칭은?"
+      },
+      {
+        id: 8,
+        word: "공감",
+        chosung: "ㄱㄱ",
+        category: "소통·윤리",
+        meaning: "상대방의 처지나 감정을 자신의 것처럼 깊이 이해하고 느끼는 마음",
+        sentence: "슬퍼하는 친구의 손을 잡으며 그 아픔에 진심으로 (      )해 주었다.",
+        relationWord: "배려",
+        antonym: "무관심",
+        misconceptFalse: "'공감'은 남의 슬픔을 보고 비웃거나 아무 상관 없는 일로 치부하는 것이다.",
+        applicationScenario: "다리를 다친 짝꿍의 불편한 마음을 헤아려 급식판을 대신 가져다주었다. 이때 필요한 핵심 태도는?"
+      },
+      {
+        id: 9,
+        word: "생태계",
+        chosung: "ㅅㅌㄱ",
+        category: "환경·생태",
+        meaning: "일정한 지역의 모든 생물과 그들을 둘러싼 환경이 서로 영향을 주고받는 유기적 체계",
+        sentence: "환경오염으로 특정 곤충이 멸종하면 먹이사슬이 파괴되어 (      )의 평형이 깨진다.",
+        relationWord: "먹이사슬",
+        antonym: "무생물계",
+        misconceptFalse: "생태계에서 생산자(식물)가 모두 사라져도 소비자(동물)는 아무런 영향 없이 번성한다.",
+        applicationScenario: "숲속에서 나무, 다람쥐, 버섯, 토양이 서로 끊임없이 영향을 주고받으며 균형을 유지하고 있다. 이 전체 체계를 무엇이라 부르는가?"
+      },
+      {
+        id: 10,
+        word: "인내",
+        chosung: "ㅇㄴ",
+        category: "정신력",
+        meaning: "닥쳐오는 괴로움이나 힘든 과정을 꺾이지 않고 끝까지 참고 견딤",
+        sentence: "씨앗이 메마른 겨울의 추위를 (      )로 견뎌내고 마침내 봄꽃을 피웠다.",
+        relationWord: "끈기",
+        antonym: "조급",
+        misconceptFalse: "'인내'는 조금만 힘들어도 곧바로 모든 노력을 포기해 버리는 것이다.",
+        applicationScenario: "실험이 여러 번 실패했지만 좌절하지 않고 문제점을 고쳐가며 수백 번 다시 시도하여 성공했다. 어떤 정신이 발휘되었는가?"
+      }
+    ];
+
+    // 기획안 기반 5대 시나리오 모델 (화사하고 선명한 3D 비주얼 테마)
+    const SCENARIOS = [
+      {
+        id: "detective",
+        title: "01. 꼬마 탐정단: 사라진 황금 돋보기의 비밀",
+        badge: "추리 / 탐정물",
+        avatar: "🔍",
+        speaker: "명탐정 셜록",
+        intro: "비밀 연구실의 대대로 내려오는 보물 '황금 돋보기'가 도난당했네!\n현장에 남겨진 단서 카드를 하나씩 해독하여 다음 장소의 잠금장치를 열고 범인을 찾아내게.",
+        themeColor: 0xf59e0b,
+        floorColor: 0xF6E7C8, pathColor: 0xFFF6E0, wallColor: 0xC98B5B, wallTopColor: 0xE8A86E, doorColor: 0xFF6F59,
+        storySteps: [
+          "발자국 속 쪽지 암호를 해독했네! 첫 번째 연구실 서재 문이 열렸어.",
+          "창틀에 적힌 두 번째 단서를 풀었군. 범인이 남긴 결정적 지문이 나타났네!",
+          "기초 수색 장비를 확보했네! 이제 연구실 비밀 금고 구역으로 들어서세.",
+          "다이얼 암호를 풀었네! 알리바이 진술서의 숨겨진 모순이 드러나기 시작했어.",
+          "관계어 퍼즐을 풀어 격벽을 통과했군! 용의자들의 행적이 좁혀지고 있네.",
+          "서랍 속 비밀 노트를 획득했네! 범인이 흘린 두 번째 알리바이 허점이 보여.",
+          "함정 장치를 무력화했네! 이제 사건의 중심인 메인 금고실이 눈앞일세.",
+          "용의자들의 알리바이 속 오개념을 정확하게 지목했군! 진실이 밝혀지고 있네.",
+          "최종 금고 비밀번호 조합의 마지막 열쇠를 풀었네! 보관함이 열리고 있어.",
+          "사건 해결! 도난당했던 황금 돋보기를 회수하고 연구실의 평화를 되찾았네!"
+        ]
+      },
+      {
+        id: "chronos",
+        title: "02. 시공간 복원선: 멈춰버린 시계탑 요새",
+        badge: "SF / 시간여행",
+        avatar: "⏳",
+        speaker: "크로노스 함장",
+        intro: "시간의 흐름을 조율하는 '크로노스 시계탑'이 멈추었습니다!\n지식 에너지 코드를 충전해 시간의 톱니바퀴를 다시 돌려 얼어붙은 세계를 구하십시오.",
+        themeColor: 0x06b6d4,
+        floorColor: 0xD6EEF9, pathColor: 0xF2FBFF, wallColor: 0x6FB7E0, wallTopColor: 0x9BD3F2, doorColor: 0x3FA9F5,
+        storySteps: [
+          "제1 제어판 복구 완료! 정지되었던 시간의 초침이 미세하게 진동하기 시작했습니다.",
+          "동력 전송 케이블 연결 성공! 주변의 멈춘 입자들이 다시 흐릅니다.",
+          "보조 태엽 밸브 개방! 시계탑 2층 시공간 왜곡 챔버로 진입합니다.",
+          "시간 왜곡 챔버의 어휘 결합 퍼즐을 풀었습니다! 불안정한 균열이 봉합되었습니다.",
+          "과거와 미래의 지식 에너지 매칭 성공! 중앙 톱니바퀴 동력이 50% 복원되었습니다.",
+          "시공간 나침반 안정화 완료! 요새 깊숙한 중심 코어로의 통로가 열렸습니다.",
+          "과열된 보조 냉각기를 식혔습니다! 메인 코어의 온도가 정상으로 돌아옵니다.",
+          "시간의 역류 오개념을 바로잡았습니다! 최종 태엽 코어의 과열을 막았습니다.",
+          "마지막 3가지 핵심 개념을 순서대로 투입하는 최종 시퀀스가 가동됩니다.",
+          "임무 완수! 크로노스 시계탑이 다시 힘차게 회전하며 전 세계의 시간이 복원되었습니다!"
+        ]
+      },
+      {
+        id: "magic_school",
+        title: "03. 별빛 마법학교: 봉인된 고대 마법서의 시험",
+        badge: "판타지 / 마법",
+        avatar: "🧙‍♂️",
+        speaker: "멀린 교장 선생님",
+        intro: "도서관 깊은 곳에서 깨어난 장난꾸러기 정령이 고대 마법서의 주문을 흩뿌려놓았단다!\n단어 주문을 올바르게 외워 정령을 진정시키고 마법서의 시험을 통과해 보게나.",
+        themeColor: 0xa855f7,
+        floorColor: 0xEDE6FF, pathColor: 0xFBF8FF, wallColor: 0x9B84E6, wallTopColor: 0xBBA8F5, doorColor: 0xD16BE8,
+        storySteps: [
+          "첫 번째 속성 주문 발음 성공! 굳게 닫혔던 도서관 서고의 문이 열렸네.",
+          "신비로운 원소 룬이 빛나기 시작했네! 어둠에 잠겼던 서가가 밝아지고 있어.",
+          "초급 마법 완드를 획득했네! 이제 움직이는 계단 미로로 진입하세.",
+          "움직이는 계단 문지기 석상의 반의어 수수께끼를 멋지게 풀어내었군!",
+          "흩어졌던 고대 주문의 두 번째 단락이 제자리를 찾아 빛나기 시작했네.",
+          "비전 마법의 룬 결합 퍼즐을 완성했네! 장난꾸러기 정령이 놀라 도망치고 있어.",
+          "금지된 구역의 보호 결계가 열렸네! 대마법서의 본체가 모습을 드러내네.",
+          "오개념 흑마법을 지혜롭게 가려내었군! 정령의 장난기가 차분히 가라앉고 있네.",
+          "마지막 결계 해제 영창에 도달했네! 고대 마법서의 완전한 주문을 읊어보세.",
+          "시험 통과! 잃어버렸던 대마법서가 찬란한 빛을 되찾았네. 자네에게 초급 마법사 칭호를 수여하네!"
+        ]
+      },
+      {
+        id: "cyber_hacker",
+        title: "04. 사이버 해커 V의 침공: 메인프레임 방화벽을 사수하라",
+        badge: "SF / 사이버 보안",
+        avatar: "💻",
+        speaker: "보안관 AI",
+        intro: "가상 도시 '네오 서울'이 의문의 해커 'V'의 바이러스 공격을 받아 마비되었습니다!\n주니어 화이트 해커가 되어 방화벽 코드를 복구하고 감염 노드를 정화하십시오.",
+        themeColor: 0x10b981,
+        floorColor: 0xDDF6E6, pathColor: 0xF4FFF7, wallColor: 0x5DBE86, wallTopColor: 0x8AD9A8, doorColor: 0x2FC4B2,
+        storySteps: [
+          "감염된 서브루틴 접근 포트 식별 성공! 보안 진입로가 확보되었습니다.",
+          "1차 악성코드 격리 완료! 끊어졌던 백본 네트워크가 재연결됩니다.",
+          "보안 복구 툴킷 다운로드 완료! 메인프레임 코어 구역으로 전진합니다.",
+          "해커 V가 남긴 악성 스크립트를 분석하여 긴급 보안 패치를 적용했습니다!",
+          "바이러스 격리벽의 비밀 암호 코드를 해독하여 통로를 열었습니다.",
+          "손상된 데이터베이스 클러스터의 무결성 검증을 마쳤습니다.",
+          "해커의 역추적 함정을 완벽히 차단했습니다! 이제 중앙 루트 서버입니다.",
+          "보안 시스템의 오개념 취약점을 바로잡았습니다! 해커의 통제권이 무너집니다.",
+          "메인프레임 루트 관리자 권한을 탈환하기 위한 최종 3단계 보안 인증 중입니다.",
+          "해킹 공격 완전 방어! 네오 서울의 모든 네트워크가 정화되었으며 시스템이 복구되었습니다!"
+        ]
+      },
+      {
+        id: "pyramid",
+        title: "05. 잃어버린 문명의 황금 피라미드 탐험",
+        badge: "고고학 / 어드벤처",
+        avatar: "🧭",
+        speaker: "탐험대장 잭",
+        intro: "정글 깊은 곳에서 천 년 동안 묻혀 있던 태양의 피라미드가 발견되었어!\n내부의 거대한 상형문자 함정을 풀고 파라오의 보물방으로 도달해 보자.",
+        themeColor: 0xf59e0b,
+        floorColor: 0xFBEBCB, pathColor: 0xFFF8E6, wallColor: 0xE0A55A, wallTopColor: 0xF2C27E, doorColor: 0xFF8A3D,
+        storySteps: [
+          "외벽의 상형문자 뜻을 해독했어! 첫 번째 거석 문이 스르륵 열렸어.",
+          "벽면의 횃불이 켜지며 고대 벽화가 빛나기 시작했어!",
+          "탐험가의 나침반을 획득했어. 이제 바닥이 무너지는 체스판 통로로 들어서자.",
+          "올바른 개념 블록만 밟고 체스판 함정 복도를 무사히 건넜어!",
+          "회전하는 고대 돌기둥의 짝 단어를 맞춰 비밀 빗장을 풀었어.",
+          "스핑크스의 거석 수수께끼를 풀었어! 파라오의 성소가 코앞이야.",
+          "비밀 지하 통로의 수로가 열렸어! 신선한 공기가 유입되고 있어.",
+          "고대 사제의 저주가 담긴 왜곡된 오개념을 지혜롭게 간파했어!",
+          "파라오의 황금 관 앞에 새겨진 최종 봉인 수수께끼를 해독 중이야.",
+          "탐험 대성공! 태양의 황금 보물을 획득하고 미궁의 지상 출구를 활짝 열었어!"
+        ]
+      }
+    ];
+
+    // ───── 저장(브라우저에만 보관) ─────
+    const STORE_KEY = "knowledgeQuest.v5";
+    function loadStore() {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveStore(patch) {
+      const s = Object.assign(loadStore(), patch);
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch (e) {}
+      return s;
+    }
+
+    // ───── 안내 토스트 (alert 대신) ─────
+    function showToast(msg, tone) {
+      const t = document.createElement("div");
+      t.className = tone === "warn" ? "toast warn" : "toast";
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3200);
+    }
+
+    // ───── 효과음 (WebAudio, 파일 없음) ─────
+    let audioCtx = null;
+    function sfx(kind) {
+      if (!gameState.soundOn) return;
+      try {
+        audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const notes = {
+          step: [[260, .03, .04]],
+          right: [[660, 0, .1], [880, .09, .14]],
+          wrong: [[220, 0, .14], [170, .12, .18]],
+          open: [[392, 0, .1], [523, .08, .1], [659, .16, .16]],
+          clear: [[523, 0, .12], [659, .12, .12], [784, .24, .12], [1047, .36, .3]],
+          tap: [[520, 0, .05]]
+        }[kind] || [];
+        notes.forEach(([f, at, len]) => {
+          const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+          o.type = kind === "step" ? "sine" : "triangle";
+          o.frequency.value = f;
+          o.connect(g); g.connect(audioCtx.destination);
+          const t0 = audioCtx.currentTime + at;
+          g.gain.setValueAtTime(kind === "step" ? .04 : .14, t0);
+          g.gain.exponentialRampToValueAtTime(.001, t0 + len);
+          o.start(t0); o.stop(t0 + len + .02);
+        });
+      } catch (e) {}
+    }
+    function toggleSound() {
+      gameState.soundOn = !gameState.soundOn;
+      saveStore({ soundOn: gameState.soundOn });
+      syncSoundButtons();
+      if (gameState.soundOn) sfx("tap");
+    }
+    function syncSoundButtons() {
+      document.getElementById('soundBtn').innerHTML = gameState.soundOn ? ART.speaker : ART.mute;
+      document.getElementById('pauseSoundBtn').textContent = gameState.soundOn ? "🔇 소리 끄기" : "🔊 소리 켜기";
+    }
+
+    // 읽어 주기 (글을 잘 못 읽는 아이도 풀 수 있게)
+    function say(text) {
+      try {
+        if (!("speechSynthesis" in window)) { showToast("이 기기는 읽어 주기를 못 해요.", "warn"); return; }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(String(text).replace(/<[^>]+>/g, " ").replace(/\(\s*\)/g, "빈칸").replace(/\s+/g, " "));
+        u.lang = "ko-KR"; u.rate = .9;
+        speechSynthesis.speak(u);
+      } catch (e) {}
+    }
+
+    // 위쪽 문 10칸 표시
+    function updateDoorDots() {
+      const box = document.getElementById('doorDots');
+      if (!box || !gameState.gateObjects) return;
+      const nt = gameState.gateObjects.find(g => !g.solved);
+      box.innerHTML = gameState.gateObjects.map(g => `<i class="${g.solved ? 'on' : g === nt ? 'next' : ''}"></i>`).join("");
+    }
+
+    // 게임 상태
+    let gameState = {
+      knowledgeDB: [...DEFAULT_KNOWLEDGE_DB],
+      activeScenario: null,
+      scenarioChoice: "random",
+      selectedHeroType: "explorer",
+      solvedCount: 0,
+      totalCount: 10,
+      elapsedMs: 0,
+      lastTick: 0,
+      timerInterval: null,
+      isPaused: true,
+      ended: true,
+      stars: 0,
+      soundOn: loadStore().soundOn !== false,
+      visited: new Set(),
+
+      player: {
+        gridX: 1,
+        gridY: 1,
+        worldX: 1,
+        worldZ: 1,
+        targetWorldX: 1,
+        targetWorldZ: 1,
+        isMoving: false,
+        moveProgress: 1,
+        rotationY: 0,
+        targetRotationY: 0
+      },
+      mapGrid: [],
+      gateObjects: [],
+      activeGateIndex: null,
+      cols: 21,
+      rows: 17
+    };
+
+    // Three.js 글로벌
+    let scene, camera, renderer;
+    let playerMesh, playerSilhouetteMesh, playerPointLight;
+    let mapObjectGroup = new THREE.Group();
+    let gatesGroup = new THREE.Group();
+    let ambientLight, dirLight;
+    let nextMarker = null;
+    let clock = new THREE.Clock();
+
+    function formatTime(ms) {
+      const s = Math.floor(ms / 1000);
+      return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+    }
+
+    function initThree() {
+      const container = document.getElementById('gameViewport');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.set(1, 10.5, 5.8);
+      camera.lookAt(1, 0.35, 1);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const oldCanvas = container.querySelector(':scope > canvas');
+      if (oldCanvas) container.removeChild(oldCanvas);
+      container.appendChild(renderer.domElement);
+
+      // 균일하고 선명한 고품질 3D 광원 시스템
+      ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+      scene.add(new THREE.HemisphereLight(0xE6F7FF, 0xFFE9C7, 0.55));
+
+      dirLight = new THREE.DirectionalLight(0xFFF6E5, 1.0);
+      dirLight.position.set(10, 22, 10);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      dirLight.shadow.camera.near = 0.5;
+      dirLight.shadow.camera.far = 60;
+      const d = 16;
+      dirLight.shadow.camera.left = -d;
+      dirLight.shadow.camera.right = d;
+      dirLight.shadow.camera.top = d;
+      dirLight.shadow.camera.bottom = -d;
+      scene.add(dirLight);
+      scene.add(dirLight.target);
+
+      scene.add(mapObjectGroup);
+      scene.add(gatesGroup);
+
+      // 미로 아래 넓은 잔디밭 (미로가 허공에 떠 보이지 않게)
+      const grass = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: 0x9BE08A, roughness: 1 }));
+      grass.rotation.x = -Math.PI / 2;
+      grass.position.set(10, -0.17, 8);
+      grass.receiveShadow = true;
+      scene.add(grass);
+
+      // 시야가 가리지 않도록 원거리에서만 은은하게 작동하는 안개
+      scene.fog = new THREE.Fog(0x0f172a, 24, 65);
+      renderer.setClearColor(0x090d16);
+
+      buildPlayerMesh(gameState.selectedHeroType);
+      window.addEventListener('resize', onWindowResize);
+
+      // 3D 렌더링 루프 즉시 가동
+      animate();
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('gameViewport');
+      if (!container || !renderer || !camera) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // 캐릭터 선택
+    function selectHero(heroType) {
+      gameState.selectedHeroType = heroType;
+      document.querySelectorAll('.hero-card').forEach(c => {
+        const on = c.id === `heroBtn_${heroType}`;
+        c.classList.toggle('on', on);
+        c.setAttribute('aria-pressed', on);
+      });
+      sfx("tap");
+
+      const names = { explorer: "꼬마 탐험가 잭", cyberbot: "사이버 봇 네오", wizard: "달빛 마법사 루나" };
+      document.getElementById('currentHeroName').innerText = names[heroType] || "탐험가";
+      
+      if (scene) {
+        buildPlayerMesh(heroType);
+      }
+    }
+
+    // 시나리오 고르기 버튼 (5개 + 무작위)
+    function renderScenarioPicker() {
+      const box = document.getElementById('scenarioPicker');
+      const short = { detective: "탐정", chronos: "시계탑", magic_school: "마법학교", cyber_hacker: "해커", pyramid: "피라미드" };
+      const items = [...SCENARIOS.map(s => ({ id: s.id, label: short[s.id] || s.badge })), { id: "random", label: "아무거나" }];
+      box.innerHTML = items.map(it => `
+        <button type="button" class="scn" data-scn="${it.id}" aria-pressed="${gameState.scenarioChoice === it.id}">
+          <span class="art">${art(it.id)}</span><span>${it.label}</span>
+        </button>`).join("");
+      box.querySelectorAll('[data-scn]').forEach(b => b.onclick = () => {
+        sfx("tap");
+        gameState.scenarioChoice = b.dataset.scn;
+        prepareNewScenarioAndMaze();
+        renderScenarioPicker();
+      });
+    }
+
+    const HEROES = [["explorer", "탐험가 잭"], ["cyberbot", "로봇 네오"], ["wizard", "마법사 루나"]];
+    function renderHeroCards() {
+      const row = document.getElementById('heroRow');
+      row.innerHTML = HEROES.map(([id, name]) => `
+        <button type="button" class="hero-card ${gameState.selectedHeroType === id ? 'on' : ''}" id="heroBtn_${id}" onclick="selectHero('${id}')" aria-pressed="${gameState.selectedHeroType === id}">
+          <span class="art">${art(id)}</span><span>${name}</span>
+        </button>`).join("");
+    }
+
+    function showStartModal() {
+      renderScenarioPicker();
+      renderHeroCards();
+      document.getElementById('introSay').innerHTML = ART.speaker;
+      document.getElementById('introSay').onclick = () => say(document.getElementById('modalScenarioIntro').textContent);
+      const modal = document.getElementById('charSelectModal');
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      setTimeout(() => document.getElementById('startBtn').focus(), 50);
+    }
+
+    // 캐릭터 선택 후 미로 탐험 시작
+    function confirmHeroAndStart() {
+      if (!gameState.activeScenario) {
+        prepareNewScenarioAndMaze();
+      }
+      const modal = document.getElementById('charSelectModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+      }
+      sfx("open");
+      gameState.isPaused = false;
+      gameState.ended = false;
+      gameState.elapsedMs = 0;
+      gameState.lastTick = performance.now();
+      clearInterval(gameState.timerInterval);
+      gameState.timerInterval = setInterval(updateTimer, 250);
+      setNotice("노란 화살표가 있는 문으로 가요!");
+      updateDoorDots();
+    }
+
+    function hideModal(id) {
+      const m = document.getElementById(id);
+      if (m) { m.classList.add('hidden'); m.style.display = 'none'; }
+    }
+
+    function restartWithNewMaze() {
+      hideModal('resultModal'); hideModal('pauseModal'); hideModal('quizModal'); hideModal('storyBubbleModal');
+      prepareNewScenarioAndMaze();
+      showStartModal();
+    }
+
+    // 같은 시나리오로 미로만 새로 만들어 바로 시작
+    function restartSameScenario() {
+      hideModal('resultModal'); hideModal('pauseModal'); hideModal('quizModal'); hideModal('storyBubbleModal');
+      const keep = gameState.scenarioChoice;
+      gameState.scenarioChoice = gameState.activeScenario ? gameState.activeScenario.id : keep;
+      prepareNewScenarioAndMaze();
+      gameState.scenarioChoice = keep;
+      confirmHeroAndStart();
+    }
+
+    function backToTitle() {
+      clearInterval(gameState.timerInterval);
+      gameState.ended = true;
+      restartWithNewMaze();
+    }
+
+    // 일시정지
+    function openPause() {
+      if (gameState.ended) return;
+      gameState.wasPausedBeforeMenu = gameState.isPaused;
+      gameState.isPaused = true;
+      syncSoundButtons();
+      const m = document.getElementById('pauseModal');
+      m.classList.remove('hidden'); m.style.display = 'flex';
+    }
+    function closePause() {
+      hideModal('pauseModal');
+      gameState.isPaused = !!gameState.wasPausedBeforeMenu;
+      gameState.lastTick = performance.now();
+    }
+
+    const isTouch = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    function setNotice(text) { document.getElementById('viewModeNotice').textContent = text; }
+
+    // 3D 캐릭터 및 X-Ray 실루엣 생성
+    function buildPlayerMesh(heroType) {
+      if (playerMesh) scene.remove(playerMesh);
+      if (playerSilhouetteMesh) scene.remove(playerSilhouetteMesh);
+
+      playerMesh = new THREE.Group();
+
+      let bodyColor = 0x38bdf8;
+      let hatColor = 0xb45309;
+      let emissiveColor = 0xf59e0b;
+
+      if (heroType === 'cyberbot') {
+        bodyColor = 0x06b6d4;
+        hatColor = 0x0284c7;
+        emissiveColor = 0x00f0ff;
+      } else if (heroType === 'wizard') {
+        bodyColor = 0x9333ea;
+        hatColor = 0x6b21a8;
+        emissiveColor = 0xd946ef;
+      }
+
+      // 몸체 (작은 몸 + 큰 머리 = 귀여운 2등신)
+      if (heroType === 'explorer') bodyColor = 0x3FA9F5;
+      if (heroType === 'cyberbot') bodyColor = 0x8A9BB8;
+      if (heroType === 'wizard') bodyColor = 0x8E6CEF;
+      const bodyGeo = new THREE.CylinderGeometry(0.24, 0.32, 0.42, 20);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.55 });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.y = 0.36;
+      body.castShadow = true;
+      playerMesh.add(body);
+
+      // 머리
+      const headGeo = new THREE.SphereGeometry(0.4, 24, 24);
+      const headMat = new THREE.MeshStandardMaterial({ color: heroType === 'cyberbot' ? 0xDDE6F2 : 0xFFD7B5, roughness: 0.6 });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.y = 0.86;
+      head.castShadow = true;
+      playerMesh.add(head);
+
+      // 눈: 까만 동그라미 + 반짝임, 볼터치
+      const eyeMat = new THREE.MeshStandardMaterial({ color: heroType === 'cyberbot' ? 0x5CF2FF : 0x3B3355, emissive: heroType === 'cyberbot' ? 0x5CF2FF : 0x000000, emissiveIntensity: 0.6, roughness: 0.3 });
+      const shineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const cheekMat = new THREE.MeshStandardMaterial({ color: 0xFF9C8A, roughness: 0.8 });
+      [-1, 1].forEach(s => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), eyeMat);
+        eye.position.set(0.14 * s, 0.9, 0.35);
+        eye.scale.set(1, 1.25, 0.6);
+        playerMesh.add(eye);
+        const shine = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), shineMat);
+        shine.position.set(0.14 * s + 0.025, 0.93, 0.385);
+        playerMesh.add(shine);
+        if (heroType !== 'cyberbot') {
+          const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), cheekMat);
+          cheek.position.set(0.24 * s, 0.8, 0.31);
+          cheek.scale.set(1, 0.6, 0.4);
+          playerMesh.add(cheek);
+        }
+      });
+      if (heroType === 'cyberbot') {
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.22, 0.1), new THREE.MeshStandardMaterial({ color: 0x3B3355, roughness: 0.3 }));
+        visor.position.set(0, 0.9, 0.33);
+        playerMesh.add(visor);
+      }
+
+      // 모자 파츠
+      if (heroType === 'explorer') {
+        const brimGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.05, 20);
+        const hatMat = new THREE.MeshStandardMaterial({ color: 0xd97706 });
+        const brim = new THREE.Mesh(brimGeo, hatMat);
+        brim.position.set(0, 1.2, -0.06);
+        playerMesh.add(brim);
+
+        const capGeo = new THREE.CylinderGeometry(0.36, 0.4, 0.26, 20);
+        const cap = new THREE.Mesh(capGeo, hatMat);
+        cap.position.set(0, 1.3, 0);
+        playerMesh.add(cap);
+
+        const lampGeo = new THREE.SphereGeometry(0.1, 8, 8);
+        const lampMat = new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 1.0 });
+        const lamp = new THREE.Mesh(lampGeo, lampMat);
+        lamp.position.set(0, 1.24, 0.42);
+        playerMesh.add(lamp);
+
+      } else if (heroType === 'cyberbot') {
+        const antGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.3, 8);
+        const antMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8 });
+        const ant = new THREE.Mesh(antGeo, antMat);
+        ant.position.set(0, 1.38, 0);
+        playerMesh.add(ant);
+
+        const tipGeo = new THREE.SphereGeometry(0.08, 8, 8);
+        const tipMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x06b6d4, emissiveIntensity: 1.2 });
+        const tip = new THREE.Mesh(tipGeo, tipMat);
+        tip.position.set(0, 1.56, 0);
+        playerMesh.add(tip);
+
+      } else if (heroType === 'wizard') {
+        const coneGeo = new THREE.ConeGeometry(0.46, 0.7, 20);
+        const coneMat = new THREE.MeshStandardMaterial({ color: 0x6b21a8 });
+        const cone = new THREE.Mesh(coneGeo, coneMat);
+        cone.position.set(0, 1.5, -0.05);
+        cone.rotation.x = -0.15;
+        playerMesh.add(cone);
+
+        const orbGeo = new THREE.SphereGeometry(0.08, 8, 8);
+        const orbMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, emissive: 0xd946ef, emissiveIntensity: 1.2 });
+        const orb = new THREE.Mesh(orbGeo, orbMat);
+        orb.position.set(0, 1.86, -0.12);
+        playerMesh.add(orb);
+      }
+
+      // 발
+      const footGeo = new THREE.BoxGeometry(0.14, 0.12, 0.2);
+      const footMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+      const leftFoot = new THREE.Mesh(footGeo, footMat);
+      leftFoot.position.set(-0.16, 0.08, 0.02);
+      leftFoot.castShadow = true;
+      playerMesh.add(leftFoot);
+
+      const rightFoot = new THREE.Mesh(footGeo, footMat);
+      rightFoot.position.set(0.16, 0.08, 0.02);
+      rightFoot.castShadow = true;
+      playerMesh.add(rightFoot);
+
+      playerPointLight = new THREE.PointLight(emissiveColor, 0.35, 4);
+      playerPointLight.position.set(0, 1.2, 0);
+      playerMesh.add(playerPointLight);
+
+      scene.add(playerMesh);
+
+      // X-Ray 실루엣
+      playerSilhouetteMesh = new THREE.Group();
+      const silMat = new THREE.MeshBasicMaterial({
+        color: emissiveColor,
+        transparent: true,
+        opacity: 0.65,
+        depthTest: false,
+        depthWrite: false
+      });
+
+      const silBody = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.58, 12), silMat);
+      silBody.position.y = 0.45;
+      playerSilhouetteMesh.add(silBody);
+
+      const silHead = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), silMat);
+      silHead.position.y = 0.82;
+      playerSilhouetteMesh.add(silHead);
+
+      // 밝은 화면에서는 벽 뒤 실루엣이 캐릭터를 덮어 버려서 끔 (벽이 낮아 가려지는 일이 거의 없음)
+      playerSilhouetteMesh.renderOrder = 999;
+      playerSilhouetteMesh.visible = false;
+      scene.add(playerSilhouetteMesh);
+    }
+
+    // 새 시나리오 및 랜덤 미로 준비
+    function prepareNewScenarioAndMaze() {
+      const picked = SCENARIOS.find(s => s.id === gameState.scenarioChoice);
+      gameState.activeScenario = picked || SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+      gameState.solvedCount = 0;
+      gameState.isPaused = true;
+      gameState.ended = true;
+      gameState.stars = 0;
+      gameState.elapsedMs = 0;
+      gameState.visited = new Set();
+
+      const sc = gameState.activeScenario;
+      document.getElementById('themeBadge').innerText = sc.badge;
+      document.getElementById('gameTitle').innerText = sc.title;
+      document.getElementById('progressText').innerText = `0 / ${gameState.totalCount}`;
+      document.getElementById('starText').innerText = "0";
+      document.getElementById('timerText').innerText = "00:00";
+      const best = (loadStore().best || {})[sc.id];
+      document.getElementById('modalBestRecord').innerHTML = best
+        ? [1, 2, 3].map(i => `<span class="${i <= best.rating ? 'star-on' : 'star-off'}">★</span>`).join("")
+        : "";
+      updatePhaseHUD();
+
+      // 시작 모달 브리핑 갱신
+      document.getElementById('modalScenarioAvatar').innerText = sc.avatar;
+      document.getElementById('modalScenarioBadge').innerText = sc.badge;
+      document.getElementById('modalScenarioSpeaker').innerText = sc.speaker;
+      document.getElementById('modalScenarioTitle').innerText = sc.title;
+      document.getElementById('modalScenarioIntro').textContent = sc.intro;
+
+      // 밝은 하늘색 배경 + 먼 곳만 은은한 안개
+      dirLight.target.position.set(1, 0, 1);
+      if (playerPointLight) {
+        playerPointLight.color.setHex(sc.themeColor);
+      }
+      if (scene) {
+        scene.fog = new THREE.Fog(0xA8DEFF, 22, 55);
+      }
+      if (renderer) {
+        renderer.setClearColor(0xA8DEFF);
+      }
+
+      // 시작할 때마다 구조가 매번 새롭게 변하는 절차적 미로 생성
+      buildRandomSequentialMaze();
+    }
+
+    function updatePhaseHUD() {
+      const stage = gameState.solvedCount;
+      const el = document.getElementById('questStagePhase');
+      if (stage < 3) {
+        el.innerText = "Q1~Q3: 탐색 및 기초 단서 수집 (기초 정의·초성)";
+        el.className = "text-[11px] text-cyan-400 font-medium";
+      } else if (stage < 7) {
+        el.innerText = "Q4~Q7: 중반 미스테리/퍼즐 (관계어·빈칸 설명)";
+        el.className = "text-[11px] text-amber-400 font-medium";
+      } else {
+        el.innerText = "Q8~Q10: 최종 관문 & 보스전 (오개념 판별·지식 적용)";
+        el.className = "text-[11px] text-rose-400 font-medium";
+      }
+    }
+
+    // 구간 내 랜덤 굴절 통로 굴착 함수 (목적지 방향 가중치 + 무작위 우회로)
+    function carveRandomPath(grid, x1, y1, x2, y2, minX, maxX, minY, maxY) {
+      let cx = x1;
+      let cy = y1;
+      grid[cy][cx] = 0;
+
+      let steps = 0;
+      while ((cx !== x2 || cy !== y2) && steps < 120) {
+        steps++;
+        const moves = [];
+
+        // 목적지 방향 (가중치 3)
+        if (cx < x2 && cx + 1 <= maxX) moves.push({ x: cx + 1, y: cy, w: 3 });
+        if (cx > x2 && cx - 1 >= minX) moves.push({ x: cx - 1, y: cy, w: 3 });
+        if (cy < y2 && cy + 1 <= maxY) moves.push({ x: cx, y: cy + 1, w: 3 });
+        if (cy > y2 && cy - 1 >= minY) moves.push({ x: cx, y: cy - 1, w: 3 });
+
+        // 미로의 구불구불한 굴절을 주는 측면 이동 (가중치 1)
+        if (cy + 1 <= maxY && cy !== y2) moves.push({ x: cx, y: cy + 1, w: 1 });
+        if (cy - 1 >= minY && cy !== y2) moves.push({ x: cx, y: cy - 1, w: 1 });
+        if (cx + 1 <= maxX && cx !== x2) moves.push({ x: cx + 1, y: cy, w: 1 });
+        if (cx - 1 >= minX && cx !== x2) moves.push({ x: cx - 1, y: cy, w: 1 });
+
+        if (moves.length === 0) {
+          if (cx < x2) cx++;
+          else if (cx > x2) cx--;
+          else if (cy < y2) cy++;
+          else if (cy > y2) cy--;
+        } else {
+          const totalW = moves.reduce((sum, m) => sum + m.w, 0);
+          let rand = Math.random() * totalW;
+          let chosen = moves[0];
+          for (const m of moves) {
+            if (rand < m.w) {
+              chosen = m;
+              break;
+            }
+            rand -= m.w;
+          }
+          cx = chosen.x;
+          cy = chosen.y;
+        }
+        grid[cy][cx] = 0;
+      }
+      grid[y2][x2] = 0;
+    }
+
+    // 통로 주변에 무작위 막다른 길(데드엔드) 및 갈림길 생성 함수
+    function addRandomBranches(grid, minX, maxX, minY, maxY, count) {
+      for (let i = 0; i < count; i++) {
+        const openTiles = [];
+        for (let y = minY; y <= maxY; y++) {
+          for (let x = minX; x <= maxX; x++) {
+            if (grid[y][x] === 0) openTiles.push({ x, y });
+          }
+        }
+        if (openTiles.length === 0) continue;
+        const origin = openTiles[Math.floor(Math.random() * openTiles.length)];
+        let bx = origin.x;
+        let by = origin.y;
+        const length = 1 + Math.floor(Math.random() * 3);
+        const dirs = [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }];
+        const dir = dirs[Math.floor(Math.random() * dirs.length)];
+
+        for (let l = 0; l < length; l++) {
+          const nx = bx + dir.dx;
+          const ny = by + dir.dy;
+          if (nx >= minX && nx <= maxX && ny >= minY && ny <= maxY) {
+            grid[ny][nx] = 0;
+            bx = nx;
+            by = ny;
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
+    // 게임 시작 시마다 미로의 형태, 게이트 위치, 갈림길이 100% 무작위로 생성되는 절차적 미로 엔진
+    function buildRandomSequentialMaze() {
+      const { cols, rows } = gameState;
+      const sc = gameState.activeScenario;
+
+      // 이전 3D 메쉬 완전 초기화
+      while (mapObjectGroup.children.length > 0) {
+        mapObjectGroup.remove(mapObjectGroup.children[0]);
+      }
+      while (gatesGroup.children.length > 0) {
+        gatesGroup.remove(gatesGroup.children[0]);
+      }
+
+      // 전체를 두터운 석재 벽(1)으로 채운 그리드 생성
+      gameState.mapGrid = Array.from({ length: rows }, () => Array(cols).fill(1));
+      gameState.gateObjects = [];
+
+      // 10개 구역 사이를 연결하는 관문(게이트)의 위치를 매 게임마다 완전 무작위 선정
+      const gY0 = 1 + Math.floor(Math.random() * 3);   // Sector 0 -> 1 (X=5)
+      const gY1 = 1 + Math.floor(Math.random() * 3);   // Sector 1 -> 2 (X=10)
+      const gY2 = 1 + Math.floor(Math.random() * 3);   // Sector 2 -> 3 (X=15)
+      const gX3 = 16 + Math.floor(Math.random() * 4);  // Sector 3 -> 4 (Y=6)
+      const gY4 = 7 + Math.floor(Math.random() * 3);   // Sector 4 -> 5 (X=14)
+      const gY5 = 7 + Math.floor(Math.random() * 3);   // Sector 5 -> 6 (X=7)
+      const gX6 = 1 + Math.floor(Math.random() * 5);   // Sector 6 -> 7 (Y=11)
+      const gY7 = 12 + Math.floor(Math.random() * 3);  // Sector 7 -> 8 (X=6)
+      const gY8 = 12 + Math.floor(Math.random() * 3);  // Sector 8 -> 9 (X=12)
+      const gY9 = 12 + Math.floor(Math.random() * 3);  // Sector 9 -> 10 (X=17)
+
+      // 10개 관문 좌표 리스트
+      const gateLocations = [
+        { x: 5, y: gY0 },    // Q1 관문
+        { x: 10, y: gY1 },   // Q2 관문
+        { x: 15, y: gY2 },   // Q3 관문
+        { x: gX3, y: 6 },    // Q4 관문
+        { x: 14, y: gY4 },   // Q5 관문
+        { x: 7, y: gY5 },    // Q6 관문
+        { x: gX6, y: 11 },   // Q7 관문
+        { x: 6, y: gY7 },    // Q8 관문
+        { x: 12, y: gY8 },   // Q9 관문
+        { x: 17, y: gY9 }    // Q10 관문
+      ];
+
+      // 각 관문 문턱 개방
+      gateLocations.forEach(loc => {
+        gameState.mapGrid[loc.y][loc.x] = 0;
+      });
+
+      // --- 10개 구역별 랜덤 굴절 통로 및 갈림길 굴착 ---
+
+      // Sector 0 (출발지 1,1 -> 제1관문 5, gY0)
+      carveRandomPath(gameState.mapGrid, 1, 1, 4, gY0, 1, 4, 1, 4);
+      addRandomBranches(gameState.mapGrid, 1, 4, 1, 4, 2);
+
+      // Sector 1 (6, gY0 -> 제2관문 10, gY1)
+      carveRandomPath(gameState.mapGrid, 6, gY0, 9, gY1, 6, 9, 1, 4);
+      addRandomBranches(gameState.mapGrid, 6, 9, 1, 4, 2);
+
+      // Sector 2 (11, gY1 -> 제3관문 15, gY2)
+      carveRandomPath(gameState.mapGrid, 11, gY1, 14, gY2, 11, 14, 1, 4);
+      addRandomBranches(gameState.mapGrid, 11, 14, 1, 4, 2);
+
+      // Sector 3 (16, gY2 -> 제4관문 gX3, 6)
+      carveRandomPath(gameState.mapGrid, 16, gY2, gX3, 5, 16, 19, 1, 5);
+      addRandomBranches(gameState.mapGrid, 16, 19, 1, 5, 2);
+
+      // Sector 4 (gX3, 7 -> 제5관문 14, gY4)
+      carveRandomPath(gameState.mapGrid, gX3, 7, 15, gY4, 15, 19, 7, 9);
+      addRandomBranches(gameState.mapGrid, 15, 19, 7, 9, 2);
+
+      // Sector 5 (13, gY4 -> 제6관문 7, gY5)
+      carveRandomPath(gameState.mapGrid, 13, gY4, 8, gY5, 8, 13, 7, 9);
+      addRandomBranches(gameState.mapGrid, 8, 13, 7, 9, 2);
+
+      // Sector 6 (6, gY5 -> 제7관문 gX6, 11)
+      carveRandomPath(gameState.mapGrid, 6, gY5, gX6, 10, 1, 6, 6, 10);
+      addRandomBranches(gameState.mapGrid, 1, 6, 6, 10, 2);
+
+      // Sector 7 (gX6, 12 -> 제8관문 6, gY7)
+      carveRandomPath(gameState.mapGrid, gX6, 12, 5, gY7, 1, 5, 12, 15);
+      addRandomBranches(gameState.mapGrid, 1, 5, 12, 15, 2);
+
+      // Sector 8 (7, gY7 -> 제9관문 12, gY8)
+      carveRandomPath(gameState.mapGrid, 7, gY7, 11, gY8, 7, 11, 12, 15);
+      addRandomBranches(gameState.mapGrid, 7, 11, 12, 15, 2);
+
+      // Sector 9 (13, gY8 -> 제10관문 17, gY9)
+      carveRandomPath(gameState.mapGrid, 13, gY8, 16, gY9, 13, 16, 12, 15);
+      addRandomBranches(gameState.mapGrid, 13, 16, 12, 15, 2);
+
+      // Sector 10 (18, gY9 -> 최종 탈출 제단 19, 14)
+      carveRandomPath(gameState.mapGrid, 18, gY9, 19, 14, 18, 19, 12, 15);
+
+      // 최종 출구 탈출 제단 좌표
+      const exitX = 19;
+      const exitY = 14;
+      gameState.mapGrid[exitY][exitX] = 0;
+
+      // 플레이어 초기 위치
+      gameState.player.gridX = 1;
+      gameState.player.gridY = 1;
+      gameState.player.worldX = 1;
+      gameState.player.worldZ = 1;
+      gameState.player.targetWorldX = 1;
+      gameState.player.targetWorldZ = 1;
+      gameState.player.isMoving = false;
+      gameState.player.moveProgress = 1;
+      gameState.player.targetRotationY = Math.PI / 2;
+
+      // 3D 메쉬 생성: 시야를 가리지 않는 높이(0.65)와 선명한 입체감의 석재 벽
+      const WALL_HEIGHT = 0.65;
+      const wallGeo = new THREE.BoxGeometry(1.0, WALL_HEIGHT, 1.0);
+      const wallMat = new THREE.MeshStandardMaterial({
+        color: sc.wallColor,
+        roughness: 0.45,
+        metalness: 0.2
+      });
+
+      const wallTopGeo = new THREE.BoxGeometry(1.04, 0.08, 1.04);
+      // 위에서 내려다보는 시점이라 벽 윗면이 화면 대부분을 차지함 → 벽 색에 테마색을 살짝만 섞어 길과 구분되게
+      const wallTopMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(sc.wallColor).lerp(new THREE.Color(sc.wallTopColor), 0.35),
+        roughness: 0.25,
+        metalness: 0.3
+      });
+
+      const floorGeo = new THREE.BoxGeometry(1.0, 0.16, 1.0);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: sc.floorColor,
+        roughness: 0.55
+      });
+      const pathMat = new THREE.MeshStandardMaterial({
+        color: sc.pathColor,
+        roughness: 0.35,
+        metalness: 0.15
+      });
+
+      // 바닥 슬랩 및 벽체 입체 배치
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (gameState.mapGrid[r][c] === 1) {
+            // 벽체 바디
+            const wallMesh = new THREE.Mesh(wallGeo, wallMat);
+            wallMesh.position.set(c, WALL_HEIGHT / 2, r);
+            wallMesh.castShadow = true;
+            wallMesh.receiveShadow = true;
+            mapObjectGroup.add(wallMesh);
+
+            // 벽체 상단 장식 캡 (금빛/네온 테두리)
+            const wallCap = new THREE.Mesh(wallTopGeo, wallTopMat);
+            wallCap.position.set(c, WALL_HEIGHT + 0.04, r);
+            mapObjectGroup.add(wallCap);
+          } else {
+            // 통행로 체크무늬 바닥 슬랩
+            const floorMesh = new THREE.Mesh(floorGeo, (r + c) % 2 === 0 ? pathMat : floorMat);
+            floorMesh.position.set(c, -0.08, r);
+            floorMesh.receiveShadow = true;
+            mapObjectGroup.add(floorMesh);
+          }
+        }
+      }
+
+      // 최종 출구 탈출 제단 (찬란한 보석 제단)
+      const goalPadGeo = new THREE.CylinderGeometry(0.7, 0.8, 0.22, 16);
+      const goalPadMat = new THREE.MeshStandardMaterial({
+        color: 0x10b981,
+        emissive: 0x059669,
+        emissiveIntensity: 0.9,
+        metalness: 0.3
+      });
+      const goalPad = new THREE.Mesh(goalPadGeo, goalPadMat);
+      goalPad.position.set(exitX, 0.11, exitY);
+      mapObjectGroup.add(goalPad);
+
+      // 제단 위 회전하는 황금 보석
+      const crystalGeo = new THREE.OctahedronGeometry(0.35, 0);
+      const crystalMat = new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 1.2
+      });
+      const goalCrystal = new THREE.Mesh(crystalGeo, crystalMat);
+      goalCrystal.position.set(exitX, 0.75, exitY);
+      goalCrystal.userData = { isCrystal: true };
+      mapObjectGroup.add(goalCrystal);
+
+      const goalLight = new THREE.PointLight(0x10b981, 2.2, 7);
+      goalLight.position.set(exitX, 1.3, exitY);
+      mapObjectGroup.add(goalLight);
+
+      // 관문 10개 배치
+      gateLocations.forEach((loc, idx) => {
+        const gateMesh = createSealedDoorMesh(sc.doorColor);
+        gateMesh.position.set(loc.x, 0, loc.y);
+        gatesGroup.add(gateMesh);
+
+        // 관문 바닥에 빛나는 룬 체크포인트 원반
+        const runeDiscGeo = new THREE.CylinderGeometry(0.44, 0.44, 0.04, 16);
+        const runeDiscMat = new THREE.MeshStandardMaterial({
+          color: sc.doorColor,
+          emissive: sc.doorColor,
+          emissiveIntensity: 0.7
+        });
+        const runeDisc = new THREE.Mesh(runeDiscGeo, runeDiscMat);
+        runeDisc.position.set(loc.x, 0.02, loc.y);
+        gatesGroup.add(runeDisc);
+
+        gameState.gateObjects.push({
+          x: loc.x,
+          y: loc.y,
+          order: idx,
+          solved: false,
+          attempts: 0,
+          hintUsed: false,
+          mesh: gateMesh,
+          barrier: gateMesh.userData.barrier,
+          knowledge: gameState.knowledgeDB[idx % gameState.knowledgeDB.length]
+        });
+      });
+
+      // 다음 목표 위를 떠다니는 안내 화살표
+      const markerGeo = new THREE.ConeGeometry(0.22, 0.42, 4);
+      const markerMat = new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xfacc15, emissiveIntensity: 1.1 });
+      nextMarker = new THREE.Mesh(markerGeo, markerMat);
+      nextMarker.rotation.x = Math.PI;
+      mapObjectGroup.add(nextMarker);
+      gameState.exit = { x: exitX, y: exitY };
+      markVisited();
+      drawMinimap();
+    }
+
+    // 다음에 풀 문(순서상 가장 앞의 잠긴 문), 다 풀었으면 탈출 제단
+    function nextTarget() {
+      const g = gameState.gateObjects.find(x => !x.solved);
+      return g ? { x: g.x, y: g.y, gate: g } : { x: gameState.exit.x, y: gameState.exit.y, gate: null };
+    }
+
+    // 주변 2칸을 밝혀 미니맵에 표시
+    function markVisited() {
+      const { gridX, gridY } = gameState.player;
+      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        if (Math.abs(dx) + Math.abs(dy) <= 3) gameState.visited.add(`${gridX + dx},${gridY + dy}`);
+      }
+    }
+
+    function drawMinimap() {
+      const cv = document.getElementById('minimap');
+      if (!cv || !gameState.mapGrid.length) return;
+      const ctx = cv.getContext('2d');
+      const { cols, rows } = gameState;
+      const cell = Math.floor(Math.min(cv.width / cols, cv.height / rows));
+      const ox = Math.floor((cv.width - cell * cols) / 2), oy = Math.floor((cv.height - cell * rows) / 2);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.fillStyle = "#E7F6FF"; ctx.fillRect(0, 0, cv.width, cv.height);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (!gameState.visited.has(`${c},${r}`)) continue;
+        ctx.fillStyle = gameState.mapGrid[r][c] === 1 ? "#A99FC4" : "#FFFFFF";
+        ctx.fillRect(ox + c * cell, oy + r * cell, cell, cell);
+      }
+      const nt = nextTarget();
+      gameState.gateObjects.forEach(g => {
+        if (!gameState.visited.has(`${g.x},${g.y}`) && g !== nt.gate) return;
+        ctx.fillStyle = g.solved ? "#46C06A" : g === nt.gate ? "#FFC531" : "#FF6F59";
+        ctx.fillRect(ox + g.x * cell, oy + g.y * cell, cell, cell);
+      });
+      if (gameState.visited.has(`${gameState.exit.x},${gameState.exit.y}`) || !nt.gate) {
+        ctx.fillStyle = "#34d399";
+        ctx.beginPath(); ctx.arc(ox + (gameState.exit.x + .5) * cell, oy + (gameState.exit.y + .5) * cell, cell * .6, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = "#3FA9F5";
+      ctx.beginPath(); ctx.arc(ox + (gameState.player.gridX + .5) * cell, oy + (gameState.player.gridY + .5) * cell, cell * .7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke();
+    }
+
+    function createSealedDoorMesh(doorColor) {
+      const group = new THREE.Group();
+
+      // 좌우 지지 기둥
+      const pillarGeo = new THREE.BoxGeometry(0.2, 1.1, 0.2);
+      const pillarMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4 });
+      
+      const leftPillar = new THREE.Mesh(pillarGeo, pillarMat);
+      leftPillar.position.set(-0.42, 0.55, 0);
+      leftPillar.castShadow = true;
+      group.add(leftPillar);
+
+      const rightPillar = new THREE.Mesh(pillarGeo, pillarMat);
+      rightPillar.position.set(0.42, 0.55, 0);
+      rightPillar.castShadow = true;
+      group.add(rightPillar);
+
+      // 상단 가로 아치 보
+      const beamGeo = new THREE.BoxGeometry(1.08, 0.14, 0.22);
+      const beam = new THREE.Mesh(beamGeo, pillarMat);
+      beam.position.set(0, 1.12, 0);
+      group.add(beam);
+
+      // 반투명 발광 봉인 에너지 격벽
+      const barrierGeo = new THREE.BoxGeometry(0.72, 0.95, 0.16);
+      const barrierMat = new THREE.MeshStandardMaterial({
+        color: doorColor,
+        emissive: doorColor,
+        emissiveIntensity: 0.85,
+        transparent: true,
+        opacity: 0.85,
+        roughness: 0.2
+      });
+      const barrier = new THREE.Mesh(barrierGeo, barrierMat);
+      barrier.position.set(0, 0.52, 0);
+      barrier.castShadow = true;
+      group.add(barrier);
+
+      // 중앙 회전 룬 옥타헤드론
+      const runeGeo = new THREE.OctahedronGeometry(0.18, 0);
+      const runeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: doorColor, emissiveIntensity: 1.2 });
+      const rune = new THREE.Mesh(runeGeo, runeMat);
+      rune.position.set(0, 0.58, 0.14);
+      group.add(rune);
+
+      const light = new THREE.PointLight(doorColor, 1.2, 3.5);
+      light.position.set(0, 0.7, 0.25);
+      group.add(light);
+
+      group.userData = { barrier, rune, light, isOpen: false, openProgress: 0 };
+      return group;
+    }
+
+    // 10단계 표준 퀘스트 문항 로더
+    function openQuiz(gateIndex) {
+      const gate = gameState.gateObjects[gateIndex];
+      if (gate.solved) return;
+
+      gameState.isPaused = true;
+      gameState.activeGateIndex = gateIndex;
+      const k = gate.knowledge;
+
+      const modal = document.getElementById('quizModal');
+      const badge = document.getElementById('quizTypeBadge');
+      const stageNum = document.getElementById('quizStageNumber');
+      const hintTag = document.getElementById('quizHintTag');
+      const prompt = document.getElementById('quizPrompt');
+      const optContainer = document.getElementById('quizOptions');
+      const feedback = document.getElementById('quizFeedback');
+
+      optContainer.innerHTML = "";
+      optContainer.className = "";
+      feedback.classList.add('hidden');
+      const sayBtn = document.getElementById('quizSay');
+      sayBtn.innerHTML = ART.speaker;
+      sayBtn.onclick = () => {
+        const opts = [...optContainer.querySelectorAll('button')].map((b, i) => `${i + 1}번, ${b.dataset.label}`).join(". ");
+        say(prompt.innerText + ". " + opts);
+      };
+      const hintBox = document.getElementById('quizHintBox');
+      hintBox.classList.add('hidden');
+      hintBox.textContent = "";
+      const hintBtn = document.getElementById('quizHintBtn');
+      hintBtn.disabled = gate.hintUsed;
+      hintBtn.style.opacity = gate.hintUsed ? .4 : 1;
+      if (gate.hintUsed) showQuizHint(true);
+      gameState.quizLocked = false;
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      sfx("tap");
+
+      stageNum.innerText = `${gateIndex + 1}`;
+
+      // Q1 ~ Q3: 탐색 및 기초 단서 수집 (초성 힌트, 기본 정의 맞히기)
+      if (gateIndex < 3) {
+        badge.innerText = "기초 단서 수집";
+        badge.className = "px-3 py-1 bg-cyan-600 text-xs font-bold rounded-full font-jua shadow";
+        hintTag.innerText = `초성 힌트: [ ${k.chosung} ] / 분류: ${k.category}`;
+
+        if (gateIndex === 0) {
+          prompt.innerHTML = `뜻에 맞는 낱말은?<span class='quote'>${escHTML(k.meaning)}</span>`;
+          renderMultipleChoiceOptions(k.word);
+        } else if (gateIndex === 1) {
+          prompt.innerHTML = `빈칸에 들어갈 낱말은?<span class='quote'>${escHTML(k.sentence)}</span>`;
+          renderMultipleChoiceOptions(k.word);
+        } else {
+          prompt.innerHTML = `<b>${escHTML(k.word)}</b>, 무슨 뜻일까?`;
+          renderMeaningOptions(k);
+        }
+      }
+      // Q4 ~ Q7: 중반 미스테리/퍼즐 (비교/대조, 관계어, 빈칸 뚫린 설명문 완성)
+      else if (gateIndex < 7) {
+        badge.innerText = "중반 미스테리 퍼즐";
+        badge.className = "px-3 py-1 bg-amber-600 text-xs font-bold rounded-full font-jua shadow";
+        hintTag.innerText = `분야: ${k.category}`;
+
+        if (gateIndex === 3) {
+          prompt.innerHTML = `이런 뜻을 가진 낱말은?<span class='quote'>${escHTML(k.meaning.replace(k.word, '(      )'))}</span>`;
+          renderMultipleChoiceOptions(k.word);
+        } else if (gateIndex === 4) {
+          prompt.innerHTML = `<b>${escHTML(k.word)}</b>의 짝꿍 낱말은?`;
+          renderRelationOptions(k.relationWord, k.word);
+        } else if (gateIndex === 5) {
+          prompt.innerHTML = `<b>${escHTML(k.word)}</b>의 반대말은?`;
+          renderAntonymOptions(k.antonym, k.word);
+        } else {
+          prompt.innerHTML = `빈칸에 들어갈 낱말은?<span class='quote'>${escHTML(k.sentence)}</span>`;
+          renderMultipleChoiceOptions(k.word);
+        }
+      }
+      // Q8 ~ Q10: 최종 관문 및 보스전 (오개념 판별, 종합 지식 적용)
+      else {
+        badge.innerText = "최종 결전 및 지식 적용";
+        badge.className = "px-3 py-1 bg-rose-600 text-xs font-bold rounded-full font-jua shadow";
+        hintTag.innerText = "심화 지식 적용 검증";
+
+        if (gateIndex === 7) {
+          prompt.innerHTML = `맞는 말일까?<span class='quote'>${escHTML(k.misconceptFalse)}</span>`;
+          renderOXOptions(false);
+        } else if (gateIndex === 8) {
+          prompt.innerHTML = `이야기를 읽고 골라요<span class='quote'>${escHTML(k.applicationScenario)}</span>`;
+          renderMultipleChoiceOptions(k.word);
+        } else {
+          prompt.innerHTML = `맞는 말일까?<span class='quote'><b>${escHTML(k.word)}</b> : ${escHTML(k.meaning)}</span>`;
+          renderOXOptions(true);
+        }
+      }
+    }
+
+    const shuffleArr = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const escHTML = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    // 보기 버튼 공통: 번호 표시, 1~4 키로도 선택
+    // 보기 버튼: 큰 색깔 버튼. 낱말은 2칸씩, 긴 뜻풀이는 한 줄씩
+    const OPT_COLORS = ["sea", "tomato", "leaf", "grape"];
+    function addOption(label, isCorrect, opts = {}) {
+      const container = document.getElementById('quizOptions');
+      const n = container.children.length + 1;
+      const btn = document.createElement('button');
+      btn.type = "button";
+      btn.dataset.correct = isCorrect ? "1" : "";
+      btn.dataset.label = opts.say || label;
+      const long = !opts.ox && String(label).length > 9;
+      if (long) container.classList.add('one');
+      btn.className = "jelly opt " + (opts.ox ? `ox ${opts.ox}` : OPT_COLORS[(n - 1) % 4]) + (long ? " long" : "");
+      btn.innerHTML = opts.ox ? escHTML(label) : `<span class="n">${n}</span><span>${escHTML(label)}</span>`;
+      btn.onclick = () => checkAnswer(isCorrect, btn);
+      container.appendChild(btn);
+    }
+
+    // 정답과 섞을 오답 후보: 같은 문제 세트 안의 다른 낱말에서 고름
+    function distractors(field, correct, count) {
+      const pool = [...new Set(gameState.knowledgeDB.map(x => x[field]).filter(v => v && v !== correct && v !== "-" && v !== "상반 개념" && v !== "반대 개념" && v !== "관련 개념"))];
+      return shuffleArr(pool).slice(0, count);
+    }
+
+    function renderMultipleChoiceOptions(correctWord) {
+      shuffleArr([correctWord, ...distractors("word", correctWord, 3)]).forEach(opt => addOption(opt, opt === correctWord));
+    }
+
+    function renderMeaningOptions(targetK) {
+      shuffleArr([targetK.meaning, ...distractors("meaning", targetK.meaning, 2)]).forEach(opt => addOption(opt, opt === targetK.meaning));
+    }
+
+    function renderRelationOptions(correctRelation, word) {
+      let others = distractors("relationWord", correctRelation, 3).filter(w => w !== word);
+      if (others.length < 2) others = distractors("word", correctRelation, 3).filter(w => w !== word);
+      shuffleArr([correctRelation, ...others]).forEach(opt => addOption(opt, opt === correctRelation));
+    }
+
+    function renderAntonymOptions(correctAntonym, word) {
+      let others = distractors("antonym", correctAntonym, 3).filter(w => w !== word);
+      if (others.length < 2) others = distractors("word", correctAntonym, 3).filter(w => w !== word);
+      shuffleArr([correctAntonym, ...others]).forEach(opt => addOption(opt, opt === correctAntonym));
+    }
+
+    function renderOXOptions(correctBool) {
+      [{ label: "O", val: true, c: "sea", s: "맞아요" }, { label: "X", val: false, c: "tomato", s: "틀려요" }].forEach(opt => addOption(opt.label, opt.val === correctBool, { ox: opt.c, say: opt.s }));
+    }
+
+    // 힌트: 초성·분류·뜻 일부 (별 1개 차감, 문마다 한 번)
+    function showQuizHint(silent) {
+      const gate = gameState.gateObjects[gameState.activeGateIndex];
+      if (!gate) return;
+      const k = gate.knowledge;
+      if (!gate.hintUsed && !silent) { gate.hintUsed = true; sfx("tap"); }
+      const box = document.getElementById('quizHintBox');
+      box.innerHTML = `💡 정답 첫소리 <b>${escHTML(k.chosung || getChosung(k.word))}</b>`;
+      box.classList.remove('hidden');
+      const btn = document.getElementById('quizHintBtn');
+      btn.disabled = true; btn.style.opacity = .4;
+    }
+
+    function closeQuizForLater() {
+      hideModal('quizModal');
+      gameState.isPaused = false;
+      gameState.lastTick = performance.now();
+      setNotice("준비되면 문으로 다시 가요!");
+    }
+
+    function gateStars(gate) {
+      if (gate.attempts === 0 && !gate.hintUsed) return 3;
+      if (gate.attempts === 0) return 2;
+      return 1;
+    }
+
+    function checkAnswer(isCorrect, btn) {
+      if (gameState.quizLocked) return;
+      const feedback = document.getElementById('quizFeedback');
+      const card = document.getElementById('quizCard');
+      const gate = gameState.gateObjects[gameState.activeGateIndex];
+      feedback.classList.remove('hidden');
+
+      if (isCorrect) {
+        gameState.quizLocked = true;
+        sfx("right");
+        if (btn) btn.classList.add('opt-right');
+        document.querySelectorAll('#quizOptions button').forEach(b => b.disabled = true);
+        const got = gateStars(gate);
+        gameState.stars += got;
+        document.getElementById('starText').innerText = gameState.stars;
+        const k = gate.knowledge;
+        feedback.innerHTML = `딩동댕! <span class="star-on">${"★".repeat(got)}</span><span class="mean">${escHTML(k.word)} : ${escHTML(k.meaning)}</span>`;
+        feedback.className = "";
+        feedback.style.color = "var(--leaf-d)";
+        document.getElementById('starText').animate([{ transform: 'scale(1.6)' }, { transform: 'scale(1)' }], { duration: 400 });
+
+        setTimeout(() => {
+          const gateIdx = gameState.activeGateIndex;
+          gate.solved = true;
+          if (gate.mesh && gate.mesh.userData) gate.mesh.userData.isOpen = true;
+          sfx("open");
+          gameState.solvedCount++;
+          document.getElementById('progressText').innerText = `${gameState.solvedCount} / ${gameState.totalCount}`;
+          updatePhaseHUD();
+          hideModal('quizModal');
+          drawMinimap();
+          updateDoorDots();
+          showStorySpeechBubble(gateIdx);
+        }, 1400);
+      } else {
+        gate.attempts++;
+        sfx("wrong");
+        if (btn) { btn.classList.add('opt-wrong'); btn.disabled = true; }
+        card.classList.add('shake');
+        feedback.innerText = "다시 골라 볼까?";
+        feedback.className = "";
+        feedback.style.color = "var(--tomato-d)";
+        if (gate.attempts >= 2) showQuizHint(true);
+        setTimeout(() => card.classList.remove('shake'), 400);
+      }
+    }
+
+    function showStorySpeechBubble(gateIndex) {
+      const sc = gameState.activeScenario;
+      const storyText = sc.storySteps[gateIndex] || "관문이 열렸습니다. 다음 구역으로 이동하십시오.";
+      
+      const modal = document.getElementById('storyBubbleModal');
+      document.getElementById('storyAvatar').innerHTML = art(sc.id);
+      document.getElementById('storySpeaker').innerText = sc.speaker;
+      document.getElementById('storyStageBadge').innerText = `제${gateIndex + 1}관문 통과 (${gateIndex + 1}/10)`;
+      document.getElementById('storyContent').textContent = storyText;
+
+      const phaseLabel = document.getElementById('storyPhaseLabel');
+      phaseLabel.innerText = `${gateIndex + 1}번 문 열림!`;
+      
+      
+
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      gameState.isPaused = true;
+
+      const nextBtn = document.getElementById('storyNextBtn');
+      nextBtn.textContent = gameState.solvedCount >= gameState.totalCount ? "탈출구로! ▶" : "계속 ▶";
+      document.getElementById('storySay').innerHTML = ART.speaker;
+      document.getElementById('storySay').onclick = () => say(storyText);
+      nextBtn.onclick = () => {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        gameState.isPaused = false;
+        gameState.lastTick = performance.now();
+
+        if (gameState.solvedCount >= gameState.totalCount) {
+          setNotice("초록 탈출구로 가요!");
+          showToast("문을 다 열었어요!");
+        } else {
+          setNotice("다음 문으로 가요!");
+        }
+        drawMinimap();
+      };
+      setTimeout(() => nextBtn.focus(), 50);
+    }
+
+    // PDF 개념·해설·비교 분석 파서
+    document.getElementById('pdfInput').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const status = document.getElementById('pdfStatus');
+      status.textContent = `“${file.name}” 읽는 중…`;
+
+      try {
+        if (typeof pdfjsLib === 'undefined') throw new Error("pdf.js not loaded");
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+
+        for (let i = 1; i <= Math.min(pdf.numPages, 15); i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(" ") + "\n";
+        }
+
+        const parsedConcepts = [];
+        const lines = fullText.split(/\n|\r/);
+
+        const defPattern = /^(?:[0-9]+[.)]|[\u2022\u25a0\u25c6\u25b6\u203b])?\s*['"\[(]?([가-힣a-zA-Z]{2,12})['"\])]?\s*[:\-\—]\s*(.{8,})/i;
+        const sentDefPattern = /([가-힣]{2,10})(?:이란|란|은|는)\s+([^.]+?(?:말한다|뜻한다|의미한다|한다|이다|과정이다|현상이다|법칙이다|제도이다))\./g;
+        const comparePattern = /([가-힣]{2,10})(?:과|와)\s+(?:달리|비교하여|반대로)\s+([가-힣]{2,10})(?:은|는)\s+([^.]+)/g;
+
+        lines.forEach(line => {
+          const match = line.trim().match(defPattern);
+          if (match) {
+            const word = match[1].trim();
+            const meaning = match[2].trim();
+            if (meaning.length >= 8 && !parsedConcepts.some(c => c.word === word)) {
+              parsedConcepts.push({ word, meaning, type: "definition" });
+            }
+          }
+        });
+
+        let sentMatch;
+        while ((sentMatch = sentDefPattern.exec(fullText)) !== null) {
+          const word = sentMatch[1].trim();
+          const meaning = sentMatch[2].trim();
+          if (word.length >= 2 && word.length <= 8 && meaning.length >= 10) {
+            if (!parsedConcepts.some(c => c.word === word)) {
+              parsedConcepts.push({ word, meaning, type: "sentence_def" });
+            }
+          }
+        }
+
+        let compMatch;
+        const comparePairs = [];
+        while ((compMatch = comparePattern.exec(fullText)) !== null) {
+          comparePairs.push({
+            wordA: compMatch[1].trim(),
+            wordB: compMatch[2].trim(),
+            desc: compMatch[3].trim()
+          });
+        }
+
+        let generatedDB = [];
+
+        if (parsedConcepts.length >= 4) {
+          for (let i = 0; i < 10; i++) {
+            const item = parsedConcepts[i % parsedConcepts.length];
+            const chosung = getChosung(item.word);
+            
+            const related = comparePairs.find(cp => cp.wordA === item.word || cp.wordB === item.word);
+            const relationWord = related ? (related.wordA === item.word ? related.wordB : related.wordA) : parsedConcepts[(i + 1) % parsedConcepts.length].word;
+
+            generatedDB.push({
+              id: i + 1,
+              word: item.word,
+              chosung: chosung,
+              category: "교재 핵심 개념",
+              meaning: item.meaning,
+              sentence: `교재 문맥을 파악하고 빈칸 ( ${item.word.replace(/./g, ' ')} )에 알맞은 개념을 고르세요.`,
+              relationWord: relationWord,
+              antonym: "상반 개념",
+              misconceptFalse: `'${item.word}'은(는) 교재의 해설 내용과 전혀 다른 잘못된 설명이다.`,
+              applicationScenario: `[교재 개념 적용] 다음 설명에 해당하는 가장 적합한 개념은 무엇인가?\n"${item.meaning}"`
+            });
+          }
+        } else {
+          const rawWords = fullText.match(/[가-힣]{2,6}/g);
+          if (rawWords && rawWords.length >= 10) {
+            const stopwords = ["다음", "대한", "있는", "같은", "그리고", "따라", "통해", "위해", "때문", "경우", "모든"];
+            const unique = [...new Set(rawWords)].filter(w => !stopwords.includes(w));
+            for (let i = 0; i < 10; i++) {
+              const w = unique[i % unique.length];
+              const chosung = getChosung(w);
+              generatedDB.push({
+                id: i + 1,
+                word: w,
+                chosung: chosung,
+                category: "교재 어휘·개념",
+                meaning: `업로드된 교재 속 핵심 단원 개념: [${w}]`,
+                sentence: `본문 맥락에 비추어 빈칸 ( ${w.replace(/./g, ' ')} )에 들어갈 가장 알맞은 단어는?`,
+                relationWord: unique[(i + 2) % unique.length] || "관련 개념",
+                antonym: "반대 개념",
+                misconceptFalse: `'${w}'은(는) 사실과 전혀 무관한 잘못된 개념이다.`,
+                applicationScenario: `학습 자료의 맥락에서 [${w}]의 개념이 적절하게 적용된 지식을 탐색하십시오.`
+              });
+            }
+          }
+        }
+
+        if (generatedDB.length >= 10) {
+          gameState.knowledgeDB = generatedDB;
+          const uniq = [...new Set(generatedDB.map(g => g.word))];
+          status.textContent = `낱말 ${uniq.length}개로 새 문제를 만들었어요: ${uniq.slice(0, 6).join(", ")}${uniq.length > 6 ? " …" : ""}`;
+          showToast("교재 낱말로 새 미로를 준비했어요.");
+          setTimeout(() => { gameState.ended = true; restartWithNewMaze(); }, 900);
+        } else {
+          status.textContent = "문제로 만들 문장을 충분히 찾지 못했어요. “낱말: 뜻” 형태가 있는 PDF를 써 주세요. 지금 문제는 그대로예요.";
+          showToast("PDF에서 낱말을 충분히 찾지 못했어요.", "warn");
+        }
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = "PDF를 읽지 못했어요. 스캔한 그림 PDF는 글자를 읽을 수 없어요.";
+        showToast("PDF를 읽지 못했어요.", "warn");
+      }
+      e.target.value = "";
+    });
+
+    function resetKnowledgeDB() {
+      gameState.knowledgeDB = [...DEFAULT_KNOWLEDGE_DB];
+      document.getElementById('pdfStatus').textContent = "기본 문제 10개로 되돌렸어요.";
+      showToast("기본 문제로 되돌렸어요.");
+      setTimeout(() => { gameState.ended = true; restartWithNewMaze(); }, 700);
+    }
+
+    // 이동 입력 제어
+    function tryMove(dx, dy) {
+      if (gameState.isPaused) return;
+      if (gameState.player.isMoving) return;
+
+      const nx = gameState.player.gridX + dx;
+      const ny = gameState.player.gridY + dy;
+
+      if (nx >= 0 && nx < gameState.cols && ny >= 0 && ny < gameState.rows) {
+        // 벽에 부딪히더라도 캐릭터가 해당 방향을 즉시 바라보아 조작 피드백 제공
+        if (gameState.mapGrid[ny][nx] === 1) {
+          if (dx === 1) gameState.player.targetRotationY = Math.PI / 2;
+          else if (dx === -1) gameState.player.targetRotationY = -Math.PI / 2;
+          else if (dy === 1) gameState.player.targetRotationY = 0;
+          else if (dy === -1) gameState.player.targetRotationY = Math.PI;
+          return;
+        }
+
+        const hitGateIndex = gameState.gateObjects.findIndex(g => g.x === nx && g.y === ny);
+        if (hitGateIndex !== -1 && !gameState.gateObjects[hitGateIndex].solved) {
+          if (dx === 1) gameState.player.targetRotationY = Math.PI / 2;
+          else if (dx === -1) gameState.player.targetRotationY = -Math.PI / 2;
+          else if (dy === 1) gameState.player.targetRotationY = 0;
+          else if (dy === -1) gameState.player.targetRotationY = Math.PI;
+
+          openQuiz(hitGateIndex);
+          return;
+        }
+
+        gameState.player.gridX = nx;
+        gameState.player.gridY = ny;
+        gameState.player.targetWorldX = nx;
+        gameState.player.targetWorldZ = ny;
+        gameState.player.isMoving = true;
+        gameState.player.moveProgress = 0;
+        sfx("step");
+        markVisited();
+        drawMinimap();
+
+        if (dx === 1) gameState.player.targetRotationY = Math.PI / 2;
+        else if (dx === -1) gameState.player.targetRotationY = -Math.PI / 2;
+        else if (dy === 1) gameState.player.targetRotationY = 0;
+        else if (dy === -1) gameState.player.targetRotationY = Math.PI;
+
+        // 10개 문을 모두 열고 탈출 제단에 올라서면 엔딩 (한 번만)
+        if (gameState.solvedCount >= gameState.totalCount && !gameState.ended) {
+          if (nx === gameState.exit.x && ny === gameState.exit.y) {
+            gameState.ended = true;
+            gameState.isPaused = true;
+            setTimeout(() => endGame(), 350);
+          }
+        } else if (nx === gameState.exit.x && ny === gameState.exit.y) {
+          setNotice(`문 ${gameState.totalCount - gameState.solvedCount}개를 더 열어요!`);
+        }
+      }
+    }
+
+    function triggerMove(dir) {
+      if (dir === 'up') tryMove(0, -1);
+      if (dir === 'down') tryMove(0, 1);
+      if (dir === 'left') tryMove(-1, 0);
+      if (dir === 'right') tryMove(1, 0);
+    }
+
+    function triggerAction() {
+      if (gameState.isPaused) return;
+      gameState.gateObjects.forEach((gate, idx) => {
+        const dist = Math.abs(gate.x - gameState.player.gridX) + Math.abs(gate.y - gameState.player.gridY);
+        if (dist <= 1 && !gate.solved) openQuiz(idx);
+      });
+    }
+
+    const isOpen = id => { const m = document.getElementById(id); return m && !m.classList.contains('hidden') && m.style.display !== 'none'; };
+
+    window.addEventListener('keydown', e => {
+      // 퀴즈: 숫자 키로 보기 선택
+      if (isOpen('quizModal')) {
+        const n = parseInt(e.key, 10);
+        const btns = [...document.querySelectorAll('#quizOptions button')];
+        if (n >= 1 && n <= btns.length && !btns[n - 1].disabled) btns[n - 1].click();
+        return;
+      }
+      if (e.code === "Escape") { isOpen('pauseModal') ? closePause() : openPause(); return; }
+      if (isOpen('storyBubbleModal') || isOpen('pauseModal') || isOpen('charSelectModal') || isOpen('resultModal')) return;
+      if (["ArrowUp", "KeyW"].includes(e.code)) { e.preventDefault(); tryMove(0, -1); }
+      if (["ArrowDown", "KeyS"].includes(e.code)) { e.preventDefault(); tryMove(0, 1); }
+      if (["ArrowLeft", "KeyA"].includes(e.code)) { e.preventDefault(); tryMove(-1, 0); }
+      if (["ArrowRight", "KeyD"].includes(e.code)) { e.preventDefault(); tryMove(1, 0); }
+      if (["Space", "Enter"].includes(e.code)) { e.preventDefault(); triggerAction(); }
+    });
+
+    // 방향 버튼: 누르고 있는 동안 계속 이동
+    let holdTimer = null;
+    function stopHold() { clearInterval(holdTimer); holdTimer = null; }
+    document.querySelectorAll('#dpad [data-dir]').forEach(btn => {
+      btn.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        const dir = btn.dataset.dir;
+        if (dir === 'action') { triggerAction(); return; }
+        btn.setPointerCapture && btn.setPointerCapture(e.pointerId);
+        triggerMove(dir);
+        stopHold();
+        holdTimer = setInterval(() => triggerMove(dir), 190);
+      });
+      ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture'].forEach(ev => btn.addEventListener(ev, stopHold));
+      btn.addEventListener('contextmenu', e => e.preventDefault());
+    });
+
+    // 다른 앱으로 넘어가면 자동 일시정지
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && !gameState.ended && !gameState.isPaused) openPause();
+    });
+
+    // 렌더링 루프
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // 관문 애니메이션
+      gameState.gateObjects.forEach(gate => {
+        const u = gate.mesh.userData;
+        if (u.isOpen) {
+          if (u.openProgress < 1) {
+            u.openProgress += delta * 2.5;
+            u.barrier.position.y = THREE.MathUtils.lerp(0.52, -0.6, u.openProgress);
+            u.rune.position.y = THREE.MathUtils.lerp(0.58, -0.5, u.openProgress);
+            u.barrier.material.opacity = THREE.MathUtils.lerp(0.85, 0.05, u.openProgress);
+            u.light.intensity = THREE.MathUtils.lerp(1.2, 0.1, u.openProgress);
+          }
+        } else {
+          u.rune.rotation.y += delta * 2.0;
+          u.rune.position.y = 0.58 + Math.sin(time * 3 + gate.order) * 0.06;
+        }
+      });
+
+      // 탈출 제단 보석 회전 애니메이션
+      mapObjectGroup.children.forEach(child => {
+        if (child.userData && child.userData.isCrystal) {
+          child.rotation.y += delta * 1.5;
+          child.position.y = 0.75 + Math.sin(time * 2.5) * 0.08;
+        }
+      });
+
+      // 다음 목표 안내 화살표
+      if (nextMarker && gameState.exit) {
+        const nt = nextTarget();
+        nextMarker.position.set(nt.x, (nt.gate ? 1.75 : 1.55) + Math.sin(time * 3) * 0.12, nt.y);
+        nextMarker.rotation.y += delta * 2;
+        nextMarker.material.emissive.setHex(nt.gate ? 0xfacc15 : 0x10b981);
+      }
+
+      // 플레이어 이동 및 바운스 홉
+      if (playerMesh) {
+        if (gameState.player.isMoving) {
+          gameState.player.moveProgress += delta * 6.0;
+          if (gameState.player.moveProgress >= 1) {
+            gameState.player.moveProgress = 1;
+            gameState.player.isMoving = false;
+            gameState.player.worldX = gameState.player.targetWorldX;
+            gameState.player.worldZ = gameState.player.targetWorldZ;
+          } else {
+            const p = gameState.player.moveProgress;
+            gameState.player.worldX = THREE.MathUtils.lerp(gameState.player.worldX, gameState.player.targetWorldX, p);
+            gameState.player.worldZ = THREE.MathUtils.lerp(gameState.player.worldZ, gameState.player.targetWorldZ, p);
+          }
+        }
+
+        const bounce = gameState.player.isMoving 
+          ? Math.sin(gameState.player.moveProgress * Math.PI) * 0.25 
+          : 0;
+
+        playerMesh.position.set(gameState.player.worldX, bounce, gameState.player.worldZ);
+        playerMesh.rotation.y = THREE.MathUtils.lerp(playerMesh.rotation.y, gameState.player.targetRotationY, 0.25);
+
+        if (playerSilhouetteMesh) {
+          playerSilhouetteMesh.position.copy(playerMesh.position);
+          playerSilhouetteMesh.rotation.copy(playerMesh.rotation);
+        }
+
+        // 시야 차단 없는 최적의 하이앵글 아이소메트릭 카메라 추적
+        // 캐릭터 얼굴이 보이도록 비스듬히 내려다보는 시점
+        const targetCamX = playerMesh.position.x;
+        const targetCamY = 5.8;
+        const targetCamZ = playerMesh.position.z + 6.6;
+
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamX, 0.12);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 0.12);
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, 0.12);
+        camera.lookAt(playerMesh.position.x, 0.5, playerMesh.position.z - 0.6);
+
+        dirLight.position.set(playerMesh.position.x + 8, 18, playerMesh.position.z + 8);
+        dirLight.target.position.set(playerMesh.position.x, 0.35, playerMesh.position.z);
+      }
+
+      if (renderer && scene && camera) {
+        renderer.render(scene, camera);
+      }
+    }
+
+    // 문제·이야기·메뉴가 열려 있는 동안은 시간이 멈춤
+    function updateTimer() {
+      const now = performance.now();
+      if (!gameState.isPaused && !document.hidden && !gameState.ended) {
+        gameState.elapsedMs += now - gameState.lastTick;
+      }
+      gameState.lastTick = now;
+      document.getElementById('timerText').innerText = formatTime(gameState.elapsedMs);
+    }
+
+    function endGame() {
+      clearInterval(gameState.timerInterval);
+      updateTimer();
+      gameState.isPaused = true;
+      gameState.ended = true;
+      sfx("clear");
+      const sc = gameState.activeScenario;
+      const gates = gameState.gateObjects;
+      const firstTry = gates.filter(g => g.attempts === 0).length;
+      const maxStars = gates.length * 3;
+      const rating = gameState.stars >= maxStars * 0.9 ? 3 : gameState.stars >= maxStars * 0.6 ? 2 : 1;
+
+      // 최고 기록 저장 (별 많은 순 → 같으면 빠른 시간)
+      const store = loadStore();
+      const best = (store.best || {})[sc.id];
+      const isNewBest = !best || gameState.stars > best.stars || (gameState.stars === best.stars && gameState.elapsedMs < best.ms);
+      if (isNewBest) saveStore({ best: Object.assign({}, store.best, { [sc.id]: { stars: gameState.stars, ms: Math.round(gameState.elapsedMs), rating } }) });
+
+      const m = document.getElementById('resultModal');
+      m.classList.remove('hidden'); m.style.display = 'flex';
+      document.getElementById('resultScenarioTitle').innerText = sc.title;
+      document.getElementById('resultStars').innerHTML = [1, 2, 3].map(i => `<span class="${i <= rating ? 'star-on' : 'star-off'}">★</span>`).join("");
+      document.getElementById('resultTime').innerText = formatTime(gameState.elapsedMs);
+      document.getElementById('resultFirst').innerText = `${firstTry} / ${gates.length}`;
+      document.getElementById('resultStarCount').innerText = `${gameState.stars} / ${maxStars}`;
+      document.getElementById('resultTimeBig').innerText = formatTime(gameState.elapsedMs);
+      document.getElementById('resultStarBig').innerText = `${gameState.stars} / ${maxStars}`;
+      document.getElementById('resultSummary').innerText = isNewBest ? "🎉 최고 기록!" : "빨간 낱말을 한 번 더 들어 봐요";
+
+      // 낱말 카드: 틀린 낱말(빨강)이 먼저, 누르면 뜻을 읽어 줌
+      const reviewContainer = document.getElementById('reviewWordList');
+      const sorted = [...gates].sort((a, b) => (b.attempts + (b.hintUsed ? 1 : 0)) - (a.attempts + (a.hintUsed ? 1 : 0)));
+      const seen = new Set();
+      reviewContainer.innerHTML = "";
+      sorted.forEach(g => {
+        if (seen.has(g.knowledge.word)) return;
+        seen.add(g.knowledge.word);
+        const missed = g.attempts > 0 || g.hintUsed;
+        const chip = document.createElement('div');
+        chip.className = "wordchip" + (missed ? " miss" : "");
+        chip.innerHTML = `<span>${escHTML(g.knowledge.word)}</span><button type="button" aria-label="${escHTML(g.knowledge.word)} 뜻 듣기">${ART.speaker}</button>`;
+        chip.querySelector('button').onclick = () => say(`${g.knowledge.word}. ${g.knowledge.meaning}`);
+        reviewContainer.appendChild(chip);
+      });
+    }
+
+    // 안정적이고 즉각적인 게임 엔진 부팅 시스템
+    function bootGame() {
+      try {
+        if (typeof THREE === 'undefined') {
+          setTimeout(bootGame, 60);
+          return;
+        }
+        if (bootGame.done) return;
+        bootGame.done = true;
+        initThree();
+        syncSoundButtons();
+        prepareNewScenarioAndMaze();
+        showStartModal();
+        setTimeout(() => document.getElementById('loadingScreen').remove(), 250);
+      } catch (err) {
+        console.error("Game initialization error:", err);
+        const ls = document.getElementById('loadingScreen');
+        if (ls) ls.innerHTML = "<div class='font-jua text-rose-300 text-lg'>3D 화면을 열지 못했어요.</div><div class='text-xs text-slate-400'>인터넷 연결을 확인하고 새로고침해 주세요.</div>";
+      }
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      bootGame();
+    } else {
+      window.addEventListener('DOMContentLoaded', bootGame);
+      window.addEventListener('load', bootGame);
+    }
+  </script>
+</body>
+</html>
