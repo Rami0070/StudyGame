@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -96,7 +96,7 @@
     .diff-tag.low { background: #FFD600; color: #4A3000; border: 2px solid #D4A500; }
 
     /* 게임 중 HUD */
-    .hud { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); z-index: 10; pointer-events: none; }
+    .hud { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(14px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); z-index: 25; pointer-events: none; }
     .hud > * { pointer-events: auto; }
     .doors { display: flex; gap: 6px; background: rgba(255,255,255,.92); padding: 10px 14px; border-radius: 999px; box-shadow: 0 5px 0 rgba(0,0,0,.08); }
     .doors i { width: 22px; height: 22px; border-radius: 7px; background: #E6E0F2; display: block; }
@@ -126,21 +126,30 @@
     .bubble .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .tag { background: #FFF0C7; color: #8A5A00; border-radius: 999px; padding: 4px 14px; font-size: 18px; }
 
-    /* 퀴즈 */
-    .quiz { width: min(880px, 96%); padding: 26px 32px 28px; display: grid; gap: 20px; }
-    .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 48px; }
+    /* Quiz Modal (Prevent size distortion and scrollbar) */
+    #quizModal {
+      overflow: hidden !important;
+    }
+    .quiz {
+      width: min(860px, 94vw);
+      max-height: 92vh;
+      overflow: hidden;
+      padding: 22px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-sizing: border-box;
+      margin: auto;
+      transform: none !important;
+    }
+    .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; flex: none; }
     .quiz-card-badge { display: flex; align-items: center; gap: 8px; }
     .badge-gold {
       display: inline-flex; align-items: center; gap: 6px;
       background: linear-gradient(135deg, #F59E0B, #FBBF24);
       color: #78350F; font-size: 20px; font-weight: 700;
-      padding: 6px 16px; border-radius: 999px;
+      padding: 5px 16px; border-radius: 999px;
       border: 2px solid #FEF08A; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
-      animation: goldPulse 2s infinite alternate;
-    }
-    @keyframes goldPulse {
-      from { box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35); transform: scale(1); }
-      to { box-shadow: 0 5px 16px rgba(245, 158, 11, 0.65); transform: scale(1.03); }
     }
     .badge-normal {
       display: inline-flex; align-items: center; gap: 6px;
@@ -149,47 +158,143 @@
     }
     .doorbadge { display: none; }
     #quizHintTag { display: none; }
-    #quizPrompt { margin: 4px 0 6px; font-size: clamp(32px, 4.2vw, 44px); line-height: 1.42; word-break: keep-all; text-align: center; font-weight: 400; }
+    #quizPrompt { margin: 0; font-size: clamp(28px, 3.8vw, 40px); line-height: 1.35; word-break: keep-all; text-align: center; font-weight: 400; flex: none; }
     #quizPrompt strong, #quizPrompt b { color: var(--tomato-d); font-weight: 700; }
-    #quizPrompt .quote { display: block; margin-top: 16px; background: #fff; border-radius: 26px; padding: 20px 26px; font-size: clamp(26px, 3.4vw, 36px); line-height: 1.5; color: var(--ink); box-shadow: inset 0 0 0 3.5px var(--line); word-break: keep-all; }
-    #quizOptions { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    #quizPrompt .quote { display: block; margin-top: 10px; background: #fff; border-radius: 20px; padding: 14px 20px; font-size: clamp(22px, 3vw, 32px); line-height: 1.45; color: var(--ink); box-shadow: inset 0 0 0 3px var(--line); word-break: keep-all; }
+    #quizOptions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; flex: none; }
     #quizOptions.one { grid-template-columns: 1fr; }
-    .opt { min-height: 94px; font-size: 34px; border-radius: 28px; padding: 14px 20px; }
-    .opt.long { font-size: 25px; min-height: 82px; justify-content: flex-start; text-align: left; line-height: 1.38; font-family: inherit; font-weight: 400; }
-    .opt .n { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.35); display: grid; place-items: center; font-size: 24px; flex: none; }
-    .opt.ox { min-height: 154px; font-size: 96px; line-height: 1; }
+    .opt { min-height: 84px; font-size: 30px; border-radius: 24px; padding: 12px 18px; }
+    .opt.long { font-size: 23px; min-height: 76px; justify-content: flex-start; text-align: left; line-height: 1.35; font-family: inherit; font-weight: 400; }
+    .opt .n { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,.35); display: grid; place-items: center; font-size: 22px; flex: none; }
+    .opt.ox { min-height: 130px; font-size: 84px; line-height: 1; }
     .opt[disabled] { cursor: default; }
-    .opt-wrong { filter: grayscale(1); opacity: .45; transform: translateY(5px); box-shadow: 0 2px 0 rgba(0,0,0,.15) !important; }
-    .opt-right { animation: pop .45s cubic-bezier(.2, 1.8, .4, 1); outline: 6px solid #fff; box-shadow: 0 0 0 12px var(--leaf), 0 7px 0 var(--d) !important; }
-    @keyframes pop { 0% { transform: scale(.9); } 100% { transform: scale(1); } }
-    .quiz-bottom { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 4px; }
-    #quizHintBox { background: #FFF0C7; border-radius: 22px; padding: 14px 22px; font-size: 26px; text-align: center; }
-    #quizHintBox b { color: var(--tomato-d); font-weight: 700; letter-spacing: 4px; font-size: 34px; }
-    #quizFeedback { text-align: center; font-size: 34px; }
-    #quizFeedback .mean { display: block; font-size: 24px; color: var(--ink-soft); margin-top: 6px; font-family: inherit; font-weight: 400; }
+    .opt-wrong { filter: grayscale(1); opacity: .45; transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.15) !important; }
+    .opt-right { outline: 5px solid #fff; box-shadow: 0 0 0 8px var(--leaf), 0 5px 0 var(--d) !important; transform: none !important; }
+    .quiz-bottom { display: flex; justify-content: space-between; align-items: center; gap: 14px; min-height: 58px; flex: none; }
+    #quizHintBox { background: #FFF0C7; border-radius: 20px; padding: 10px 18px; font-size: 24px; text-align: center; flex: none; }
+    #quizHintBox b { color: var(--tomato-d); font-weight: 700; letter-spacing: 4px; font-size: 30px; }
+    #quizFeedback {
+      text-align: center;
+      font-size: clamp(23px, 3.2vw, 29px);
+      padding: 10px 18px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 2px solid var(--line);
+      box-shadow: 0 3px 0 #E3DAC6;
+      line-height: 1.3;
+      min-height: 58px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+    #quizFeedback .mean { display: block; font-size: clamp(18px, 2.2vw, 21px); color: var(--ink-soft); margin-top: 3px; font-family: inherit; font-weight: 400; }
     .shake { animation: shake .4s ease-in-out; }
-    @keyframes shake { 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
-
-    /* 결과 */
-    .result { width: min(760px, 100%); padding: 24px 26px 26px; display: grid; gap: 16px; justify-items: center; text-align: center; }
-    .result .art { width: 150px; height: 150px; }
-    .result h2 { margin: 0; font-size: 44px; font-weight: 400; color: var(--tomato-d); }
+    @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+    /* Result Modal (Wide 2-column layout) */
+    .result {
+      width: min(940px, 94vw);
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 22px 28px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-align: center;
+      box-sizing: border-box;
+      margin: auto;
+    }
+    .result .art[data-art="trophy"] {
+      width: 96px;
+      height: 96px;
+      flex: none;
+      margin: 0 auto 2px;
+    }
+    .result h2 {
+      margin: 0;
+      font-size: clamp(28px, 3.8vw, 38px);
+      font-weight: 400;
+      color: var(--tomato-d);
+      line-height: 1.2;
+    }
+    .result-body-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr;
+      gap: 18px;
+      width: 100%;
+      align-items: stretch;
+      margin-top: 4px;
+    }
+    @media (max-width: 720px) {
+      .result-body-grid { grid-template-columns: 1fr; gap: 14px; }
+      .result .art[data-art="trophy"] { width: 76px; height: 76px; }
+    }
+    .result-left-col {
+      background: #FFFFFF;
+      border-radius: 26px;
+      padding: 16px 18px;
+      box-shadow: 0 4px 0 #E3DAC6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .result-right-col {
+      background: #FFFFFF;
+      border-radius: 26px;
+      padding: 16px 18px;
+      box-shadow: 0 4px 0 #E3DAC6;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    .result-right-header {
+      font-size: 22px;
+      color: var(--ink);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px dashed var(--line);
+      padding-bottom: 6px;
+    }
     #resultStars { font-size: 70px; letter-spacing: 8px; line-height: 1; }
     #resultStars span { display: inline-block; animation: starin .5s cubic-bezier(.2, 1.8, .4, 1) both; }
     #resultStars span:nth-child(2) { animation-delay: .25s; } #resultStars span:nth-child(3) { animation-delay: .5s; }
     @keyframes starin { from { transform: scale(0) rotate(-40deg); } to { transform: none; } }
     .star-on { color: var(--sun); text-shadow: 0 5px 0 var(--sun-d); } .star-off { color: #E4DDCE; }
-    .stats { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-    .stat { background: #fff; border-radius: 22px; padding: 8px 18px; display: flex; align-items: center; gap: 8px; font-size: 26px; box-shadow: 0 5px 0 #E3DAC6; }
-    .stat svg { width: 34px; height: 34px; }
-    #reviewWordList { width: 100%; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-height: 190px; overflow-y: auto; padding: 4px; }
-    .wordchip { background: #fff; border-radius: 18px; padding: 8px 16px; font-size: 24px; box-shadow: 0 4px 0 #E3DAC6; display: flex; align-items: center; gap: 8px; }
-    .wordchip.miss { background: #FFE8E3; box-shadow: 0 4px 0 #F6B9AC; }
-    .wordchip button { width: 34px; height: 34px; border-radius: 50%; background: var(--sea); color: #fff; display: grid; place-items: center; }
-    .wordchip button svg { width: 18px; height: 18px; }
+    .stats { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+    .stat { background: #F8F5EE;
+      border-radius: 20px;
+      padding: 6px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 23px;
+      box-shadow: 0 3px 0 #E3DAC6;
+    }
+    .stat svg { width: 30px; height: 30px; }
+    #reviewWordList {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-height: 230px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+    .wordchip { background: #F8F5EE; border-radius: 16px; padding: 6px 14px; font-size: 21px; box-shadow: 0 3px 0 #E3DAC6; display: flex; align-items: center; gap: 8px; }
+    .wordchip.miss { background: #FFE8E3; box-shadow: 0 3px 0 #F6B9AC; }
+    .wordchip button { width: 30px; height: 30px; border-radius: 50%; background: var(--sea); color: #fff; display: grid; place-items: center; }
+    .wordchip button svg { width: 16px; height: 16px; }
     #resultSummary { margin: 0; font-size: 20px; color: var(--ink-soft); }
-    .btnrow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
-
+    .btnrow { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; width: 100%; }
     /* 일시정지 */
     .pause { width: min(520px, 100%); padding: 26px; display: grid; gap: 14px; }
     .pause h2 { margin: 0 0 4px; text-align: center; font-weight: 400; font-size: 38px; }
@@ -233,11 +338,17 @@
     #radarWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 50%; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
     #radar { display: block; width: 150px; height: 150px; border-radius: 50%; }
     @media (pointer: coarse) { #radarWrap { top: calc(max(14px, env(safe-area-inset-top, 0px)) + 130px); bottom: auto; } #radar { width: 116px; height: 116px; } }
-    #joyZone { position: absolute; left: 0; bottom: 0; width: 45%; height: 55%; z-index: 15; display: none; touch-action: none; }
-    #joyBase { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.45); border: 4px solid rgba(255,255,255,.9); transform: translate(-50%, -50%); left: 120px; bottom: 0; top: auto; pointer-events: none; }
-    #joyKnob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: var(--sea); box-shadow: 0 5px 0 var(--sea-d); }
-    #jumpBtn { position: absolute; right: max(24px, env(safe-area-inset-right, 0px)); bottom: max(28px, env(safe-area-inset-bottom, 0px)); z-index: 16; width: 108px; height: 108px; font-size: 30px; display: none; touch-action: none; }
+    #joyZone { position: absolute; left: 0; top: 0; width: 68%; height: 100%; z-index: 15; display: none; touch-action: none; user-select: none; -webkit-user-select: none; }
+    #joyBase { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.45); border: 4px solid rgba(255,255,255,.9); box-shadow: 0 8px 24px rgba(0,0,0,.15); transform: translate(-50%, 50%); left: 110px; bottom: 100px; top: auto; pointer-events: none; opacity: .65; transition: opacity .2s ease; }
+    #joyKnob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: var(--sea); box-shadow: 0 5px 0 var(--sea-d); pointer-events: none; }
+    #jumpBtn { position: absolute; right: max(24px, env(safe-area-inset-right, 0px)); bottom: max(28px, env(safe-area-inset-bottom, 0px)); z-index: 16; width: 108px; height: 108px; font-size: 32px; font-family: 'Jua', sans-serif; display: none; touch-action: none; user-select: none; -webkit-user-select: none; box-shadow: 0 8px 0 var(--sun-d), 0 10px 24px rgba(0,0,0,.18); }
+    #jumpBtn:active { transform: translateY(4px); box-shadow: 0 4px 0 var(--sun-d); }
     @media (pointer: coarse) { #joyZone { display: block; } #jumpBtn { display: inline-flex; } .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); } }
+    body.touch-device #joyZone { display: block !important; }
+    body.touch-device #jumpBtn { display: inline-flex !important; }
+    body.touch-device .notice { bottom: auto !important; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px) !important; }
+    body.touch-device #radarWrap { top: calc(max(14px, env(safe-area-inset-top, 0px)) + 130px) !important; bottom: auto !important; }
+    body.touch-device #radar { width: 116px; height: 116px; }
 
     .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .mode { flex-direction: column; min-height: 130px; font-size: 32px; border-radius: 30px; gap: 4px; }
@@ -347,7 +458,7 @@
           <button type="button" class="jelly grape" onclick="openBook()" style="font-size:22px">📖 낱말 도감 <span id="bookCount"></span></button>
           <button type="button" class="jelly white" id="homeSoundBtn" onclick="toggleSound()" style="font-size:20px;min-height:56px;padding:10px 18px" aria-label="효과음 켜기/끄기">🔊 효과음 켜짐</button>
         </div>
-        <span class="small" style="color:var(--ink-soft);font-size:14px">키보드: 방향키·WASD 이동 · 스페이스 점프 · 마우스 끌기 시점 돌리기</span>
+        <span class="small" style="color:var(--ink-soft);font-size:14px">키보드: WASD/방향키 이동 · 스페이스 점프 | 태블릿: 화면 터치 밀기 이동 · 점프 버튼</span>
       </div>
     </div>
   </div>
@@ -381,29 +492,38 @@
     </div>
   </div>
 
-  <!-- 결과 -->
+  <!-- Result Modal -->
   <div id="resultModal" class="overlay dim hidden">
     <div class="panel result">
       <span class="art" data-art="trophy"></span>
       <h2 id="resultTitle">다 모았어요!</h2>
-      <div id="resultScore">0</div>
-      <div class="stats">
-        <div class="stat"><span class="art" data-art="card" style="width:34px;height:34px"></span><span id="resultCards"></span></div>
-        <div class="stat"><span class="art" data-art="clock" style="width:34px;height:34px"></span><span id="resultTime"></span></div>
+      <div class="result-body-grid">
+        <div class="result-left-col">
+          <div id="resultScore">0</div>
+          <div class="stats">
+            <div class="stat"><span class="art" data-art="card" style="width:28px;height:28px"></span><span id="resultCards"></span></div>
+            <div class="stat"><span class="art" data-art="clock" style="width:28px;height:28px"></span><span id="resultTime"></span></div>
+          </div>
+          <form class="namebox" id="rankForm">
+            <input id="rankName" maxlength="6" placeholder="내 이름" autocomplete="off" aria-label="순위표에 올릴 이름">
+            <button type="submit" class="jelly sun" style="font-size:20px;min-height:50px;padding:10px 18px">🏅 순위 올리기</button>
+          </form>
+          <ol id="rankList"></ol>
+        </div>
+        <div class="result-right-col">
+          <div class="result-right-header">
+            <span>📚 오늘 함께 탐험한 낱말들</span>
+            <small style="font-size:16px;color:var(--ink-soft)">소리 버튼을 누르면 발음을 들을 수 있어요</small>
+          </div>
+          <div id="reviewWordList"></div>
+        </div>
       </div>
-      <form class="namebox" id="rankForm">
-        <input id="rankName" maxlength="6" placeholder="내 이름" autocomplete="off" aria-label="순위표에 올릴 이름">
-        <button type="submit" class="jelly sun" style="font-size:22px;min-height:56px">🏅 순위 올리기</button>
-      </form>
-      <ol id="rankList"></ol>
-      <div id="reviewWordList"></div>
-      <div class="btnrow">
-        <button type="button" class="jelly leaf" onclick="startGame(G.mode)">↻ 한 번 더</button>
-        <button type="button" class="jelly sea" onclick="toTitle()">⌂ 첫 화면</button>
+      <div class="btnrow" style="margin-top:6px">
+        <button type="button" class="jelly leaf" onclick="startGame(G.mode)" style="min-height:58px;padding:12px 32px">↻ 한 번 더 탐험하기</button>
+        <button type="button" class="jelly sea" onclick="toTitle()" style="min-height:58px;padding:12px 32px">⌂ 첫 화면으로</button>
       </div>
     </div>
   </div>
-
   <!-- 낱말 도감 -->
   <div id="bookModal" class="overlay dim hidden">
     <div class="panel book">
@@ -534,9 +654,9 @@
     const ZONES = {
       forest:  { name: "과학 숲", color: "#46C06A", hex: 0x46C06A, x: -34, z: -30, rMin: 3.5, rMax: 16, r: 18, ground: 0x5DBB55, words: SCIENCE },
       village: { name: "생활 마을", color: "#FF8A3D", hex: 0xFF8A3D, x: 34, z: -30, rMin: 8.5, rMax: 18, r: 20, ground: 0xF1DDB0, words: LIFE },
-      plaza:   { name: "문제풀이 광장", color: "#4ADE80", hex: 0x4ADE80, x: -34, z: 30, rMin: 5.0, rMax: 16, r: 18, ground: 0x86EFAC, words: MALMOI, malmoi: true },
+      plaza:   { name: "문제풀이 광장", color: "#94A3B8", hex: 0x94A3B8, x: -34, z: 30, rMin: 5.0, rMax: 16, r: 18, ground: 0x94A3B8, words: MALMOI, malmoi: true },
       park:    { name: "점프 놀이터", color: "#E5C287", hex: 0xE5C287, x: 34, z: 30, rMin: 3.5, rMax: 16, r: 18, ground: 0xE5C287, words: null },
-      center:  { name: "중앙 광장", color: "#3FA9F5", hex: 0x3FA9F5, x: 0, z: 0, rMin: 4.5, rMax: 15, r: 16, ground: 0x3B82F6, words: null }
+      center:  { name: "중앙 광장", color: "#CBD5E1", hex: 0xCBD5E1, x: 0, z: 0, rMin: 3.8, rMax: 12.0, r: 12.8, ground: 0xE2E8F0, words: null }
     };
     const REGIONS = ZONES;
     const ISLAND_R = 70;
@@ -918,11 +1038,11 @@
       // 구역 바닥 + 표지판 (앞면/뒷면 모두 글씨가 바르게 보이는 양면 구조)
       Object.entries(ZONES).forEach(([key, z]) => {
         const patchPalette = {
-          forest:  { s1: 0x4CAF50, s2: 0xA7E8BD, s3: 0x34D399 }, // 스테이지 3: 밝고 화사한 민트/에메랄드 숲 바닥
-          village: { s1: 0xF59E0B, s2: 0xFDE68A, s3: 0xFBBF24 }, // 스테이지 3: 따뜻하고 밝은 골든 앰버 마을 바닥
-          plaza:   { s1: 0x86EFAC, s2: 0xBBF7D0, s3: 0x86EFAC }, // 스테이지 3: 산뜻하고 밝은 잔디 연두빛 광장 바닥
-          center:  { s1: 0x3B82F6, s2: 0xBAE6FD, s3: 0x38BDF8 }, // 스테이지 3: 화사하고 선명한 스카이 블루 광장 포장 바닥
-          park:    { s1: 0xE5C287, s2: 0xD8B273, s3: 0xFDE68A }  // 스테이지 3: 밝고 따뜻한 황금빛 놀이터 모래 바닥
+          forest:  { s1: 0x4CAF50, s2: 0xA7E8BD, s3: 0x4A6B3D }, // 스테이지 3: 밝고 화사한 민트/에메랄드 숲 바닥
+          village: { s1: 0xF59E0B, s2: 0xFDE68A, s3: 0xD4A359 }, // 스테이지 3: 따뜻하고 밝은 골든 앰버 마을 바닥
+          plaza:   { s1: 0x94A3B8, s2: 0xA8B5C4, s3: 0x64748B }, // 문제풀이 광장: 분수대 석조 톤 일치 & 차분하게 톤다운된 슬레이트 그레이
+          center:  { s1: 0xE2E8F0, s2: 0xF8FAFC, s3: 0xCBD5E1 }, // 중앙 광장: 시계탑 석조 기단 및 본체 일치 클래식 석조 팔레트 바닥
+          park:    { s1: 0xE5C287, s2: 0xD8B273, s3: 0xD6C18E }  // 스테이지 3: 밝고 따뜻한 황금빛 놀이터 모래 바닥
         }[key] || { s1: z.ground, s2: z.ground, s3: z.ground };
         const patchMat = stdPalette(patchPalette.s1, patchPalette.s2, patchPalette.s3);
         if (key === "park") {
@@ -2674,12 +2794,13 @@
         commonColliders.push({ x, z, r: 0.5 });
       }
 
-      // 대각선 4곳에 가로등 배치
+      // 異뺤냼??以묒븰 愿묒옣(諛섍꼍 12.8m)??留욎떠 ?멸낸??媛濡쒕벑 諛곗튂 (諛섍꼍 10.5m)
+      const lampRadius = 10.5;
       const lampPositions = [
-        [-6.5, -8.0],
-        [ 6.5, -8.0],
-        [-7.5,  4.5],
-        [ 7.5,  4.5]
+        [0 + Math.cos(Math.PI * 0.25) * lampRadius, -2.5 + Math.sin(Math.PI * 0.25) * lampRadius],
+        [0 + Math.cos(Math.PI * 0.75) * lampRadius, -2.5 + Math.sin(Math.PI * 0.75) * lampRadius],
+        [0 + Math.cos(Math.PI * 1.25) * lampRadius, -2.5 + Math.sin(Math.PI * 1.25) * lampRadius],
+        [0 + Math.cos(Math.PI * 1.75) * lampRadius, -2.5 + Math.sin(Math.PI * 1.75) * lampRadius]
       ];
       lampPositions.forEach(([lx, lz]) => createStreetLamp(lx, lz));
 
@@ -2748,18 +2869,27 @@
         });
       }
 
-      // 동서남북 4방향 벤치 배치
-      createBench(4.8, -2.5, -Math.PI / 2); // 동쪽 벤치 (서쪽 방향 조망)
-      createBench(-4.8, -2.5, Math.PI / 2); // 서쪽 벤치 (동쪽 방향 조망)
-      createBench(0, 7.8, 0);               // 남쪽 벤치 (시계탑 방향 조망)
-      createBench(0, -9.0, Math.PI);        // 북쪽 벤치 (시계탑 방향 조망)
+      // ?쒓퀎??以묒떖 湲곗? 愿묒옣 援ъ“臾?諛곗튂 (?먰삎 洹좏삎 諛곗튂)
+      const tX = 0, tZ = -2.5;
 
-      // ── 4. 벽돌 화단 (Circular Brick Flower Planters) ──
+      // ?쒓퀎?묒뿉??異⑸텇??嫄곕━瑜??먯뼱 6媛쒖쓽 踰ㅼ튂瑜??먰삎?쇰줈 諛곗튂 (諛섍꼍 8.6m, ?쒓퀎??議곕쭩)
+      const benchRadius = 8.6;
+      const benchCount = 6;
+      for (let i = 0; i < benchCount; i++) {
+        const ba = i * (Math.PI * 2 / benchCount);
+        const bx = tX + Math.cos(ba) * benchRadius;
+        const bz = tZ + Math.sin(ba) * benchRadius;
+        const rotY = Math.atan2(tX - bx, tZ - bz);
+        createBench(bx, bz, rotY);
+      }
+
+      // ?? 4. 踰쎈룎 ?붾떒 (?쒓퀎?묎낵 踰ㅼ튂 ?ъ씠 以묎컙 ?곸젙 媛꾧꺽 遺꾩궛 諛곗튂) ??
+      const planterRadius = 4.8;
       const planterPositions = [
-        [-3.2, -5.5],
-        [ 3.2, -5.5],
-        [-3.2,  0.5],
-        [ 3.2,  0.5]
+        [tX + Math.cos(Math.PI * 0.25) * planterRadius, tZ + Math.sin(Math.PI * 0.25) * planterRadius],
+        [tX + Math.cos(Math.PI * 0.75) * planterRadius, tZ + Math.sin(Math.PI * 0.75) * planterRadius],
+        [tX + Math.cos(Math.PI * 1.25) * planterRadius, tZ + Math.sin(Math.PI * 1.25) * planterRadius],
+        [tX + Math.cos(Math.PI * 1.75) * planterRadius, tZ + Math.sin(Math.PI * 1.75) * planterRadius]
       ];
       const potMat = std(0xB45309, { roughness: 0.85 }); // 따뜻한 테라코타 벽돌색
       const soilMat = std(0x451A03, { roughness: 0.95 }); // 짙은 부엽토
@@ -2868,7 +2998,7 @@
       const basin = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.8, .75, 32), stdPalette(0xE2E8F0, 0xCBD5E1, 0x475569)); basin.position.set(Z.x, .38, Z.z); basin.castShadow = true; stage1Group.add(basin);
       const water = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, .1, 32), stdPalette(0x0284C7, 0x0369A1, 0x0C4A6E, { roughness: .2 })); water.position.set(Z.x, .72, Z.z); stage1Group.add(water);
       const spout = new THREE.Mesh(new THREE.CylinderGeometry(.3, .45, 1.6, 16), stdPalette(0xE2E8F0, 0xCBD5E1, 0x475569)); spout.position.set(Z.x, 1.1, Z.z); stage1Group.add(spout);
-      stage1Colliders.push({ x: Z.x, z: Z.z, r: 0.65 });
+      stage1Colliders.push({ x: Z.x, z: Z.z, r: 3.7 });
 
       const flagPaletteCols = [
         { s1: 0xDC2626, s2: 0xB91C1C, s3: 0x450A0A },
@@ -4537,7 +4667,7 @@
         ambientColor: 0xFFEDD5,
         ambientIntensity: 0.65,
         hemiSky: 0xFDBA74,
-        hemiGround: 0xFB923C,
+        hemiGround: 0xC27838,
         hemiIntensity: 0.95,
         fogColor: 0xDE7352,
         fogNear: 50,
@@ -4649,7 +4779,7 @@
           const grassPalettes = {
             1: { A: lin(0x1B5E20), B: lin(0x2E7D32), C: lin(0x0E3813) },
             2: { A: lin(0x1B5E20), B: lin(0x2E7D32), C: lin(0x0E3813) },
-            3: { A: lin(0x65A30D), B: lin(0x84CC16), C: lin(0x4D7C0F) }
+            3: { A: lin(0x5E6928), B: lin(0x768335), C: lin(0x48521F) }
           };
           const pal = grassPalettes[stageNum] || grassPalettes[1];
           const tmp = new THREE.Color();
@@ -4666,7 +4796,7 @@
         const tuftPalettes = {
           1: [0x1B5E20, 0x2E7D32, 0x388E3C, 0x14532D].map(lin),
           2: [0x1B5E20, 0x2E7D32, 0x388E3C, 0x14532D].map(lin),
-          3: [0x4D7C0F, 0x65A30D, 0x84CC16, 0xA3E635].map(lin)
+          3: [0x48521F, 0x5E6928, 0x768335, 0x8A9842].map(lin)
         };
         const tuftCols = tuftPalettes[stageNum] || tuftPalettes[1];
         for (let i = 0; i < 1200; i++) {
@@ -4807,6 +4937,12 @@
       G.stage = stageNum;
       G.stageGot = 0;
       setStageVisuals(stageNum);
+      // ?ㅽ뀒?댁?媛 蹂???뚮쭏??罹먮┃?곌? 以묒븰 愿묒옣?먯꽌 ?뺣㈃??蹂대ŉ ?쒖옉
+      P.pos.set(0, 0, 3.2);
+      P.vy = 0;
+      P.face = Math.PI;
+      camYaw = 0;
+      camPitch = 0.5;
       const stageName = `스테이지 ${stageNum}`;
       const stageSubtitle = stageNum === 1
         ? "10장의 카드를 모두 찾아 모아보세요! (난이도 하)"
@@ -5109,13 +5245,13 @@
       const q = card.q = makeQuestion(card);
       const diffCfg = DIFF_CONFIG[card.diff] || DIFF_CONFIG.mid;
 
-      // 문제카드 좌측 상단 배지 (황금문제카드 vs 일반문제카드 표시)
+      // 臾몄젣移대뱶 醫뚯륫 ?곷떒 諛곗? (?⑷툑臾몄젣移대뱶 vs ?쇰컲臾몄젣移대뱶 ?쒖떆)
       const typeBadge = $("quizCardTypeBadge");
       if (typeBadge) {
         if (card.gold) {
-          typeBadge.innerHTML = `<span class="badge-gold">✨ 황금 문제 (점수 2배!)</span>`;
+          typeBadge.innerHTML = `<span class="badge-gold">???⑷툑 臾몄젣 (?먯닔 2諛?)</span>`;
         } else {
-          typeBadge.innerHTML = `<span class="badge-normal">일반 문제</span>`;
+          typeBadge.innerHTML = `<span class="badge-normal">?쇰컲 臾몄젣</span>`;
         }
       }
 
@@ -5134,24 +5270,25 @@
       });
       $("quizHintBox").classList.add("hidden");
       $("quizFeedback").classList.add("hidden");
+      const qb = document.querySelector(".quiz-bottom");
+      if (qb) qb.classList.remove("hidden");
       $("quizHintBtn").disabled = false; $("quizHintBtn").style.opacity = 1;
       $("quizSay").innerHTML = ART.speaker;
-      $("quizSay").onclick = () => say($("quizPrompt").innerText + ". " + [...box.children].map((b, i) => `${i + 1}번, ${b.dataset.say}`).join(". "));
+      $("quizSay").onclick = () => say($("quizPrompt").innerText + ". " + [...box.children].map((b, i) => `${i + 1}踰? ${b.dataset.say}`).join(". "));
       show("quizModal");
       sfx("tap");
     }
     function showHint(free) {
       if (!G.activeCard) return;
       if (!free) G.hintUsed = true;
-      $("quizHintBox").innerHTML = `💡 정답 첫소리 <b>${esc(G.activeCard.q.hint)}</b>`;
+      $("quizHintBox").innerHTML = `?뮕 ?뺣떟 泥レ냼由?<b>${esc(G.activeCard.q.hint)}</b>`;
       $("quizHintBox").classList.remove("hidden");
       $("quizHintBtn").disabled = true; $("quizHintBtn").style.opacity = .4;
     }
     function closeQuiz(later) {
       hide("quizModal");
-      if (G.activeCard) G.activeCard.cool = performance.now() + (later ? 2500 : 1200);
       G.activeCard = null; G.paused = false;
-      if (later) notice("준비되면 다시 카드로 가요!");
+      if (later) notice("以鍮꾨릺硫??ㅼ떆 移대뱶濡?媛??");
     }
     function answer(ok, btn) {
       if (G.locked) return;
@@ -5161,6 +5298,10 @@
         G.locked = true; sfx("right");
         btn.classList.add("opt-right");
         $("quizOptions").querySelectorAll("button").forEach(b => b.disabled = true);
+        // ?뺣떟 ??遺덊븘?뷀븳 ?섎떒 踰꾪듉???④꺼 移대뱶 ?믪씠 蹂??諛??ㅽ겕濡ㅻ컮 ?앹꽦 諛⑹?
+        const qb = document.querySelector(".quiz-bottom");
+        if (qb) qb.classList.add("hidden");
+        $("quizHintBox").classList.add("hidden");
         const first = G.attempts === 0;
         if (first) G.combo++; else G.combo = 0;
 
@@ -5174,7 +5315,7 @@
         if (!first || G.hintUsed) G.missed.add(card.word.word);
         G.learned.push({ word: card.word.word, zone: card.zone, diff: card.diff, mean: card.q.mean });
         fb.style.color = isGold ? "#D97706" : "var(--leaf-d)";
-        fb.innerHTML = `딩동댕! ${isGold ? "<b style='color:#F59E0B'>✨황금 보너스 2배!</b> " : ""}+${pts}${comboMult > 1 ? ` <span class="star-on">×${comboMult}</span>` : ""}<span class="mean">${esc(card.word.word)} : ${esc(card.q.mean)}</span>`;
+        fb.innerHTML = `?⑸룞?? ${isGold ? "<b style=\"color:#F59E0B\">?⑦솴湲?蹂대꼫??2諛?</b> " : ""}+${pts}${comboMult > 1 ? ` <span class=\"star-on\">횞${comboMult}</span>` : ""}<span class=\"mean\">${esc(card.word.word)} : ${esc(card.q.mean)}</span>`;
         updateHud(true);
         setTimeout(() => { collect(card); closeQuiz(false); }, 1300);
       } else {
@@ -5182,13 +5323,12 @@
         btn.classList.add("opt-wrong"); btn.disabled = true;
         fb.style.color = "var(--tomato-d)";
         if (G.attempts >= 2) {
-          // 두 번 틀리면 카드가 도망감 → 해당 구역 다른 곳에서 다시 찾기
           G.locked = true;
-          fb.textContent = "앗, 카드가 도망갔어요! 다시 찾아봐요";
+          fb.textContent = "?? 移대뱶媛 ?꾨쭩媛붿뼱?? ?ㅼ떆 李얠븘遊먯슂";
           G.missed.add(card.word.word);
-          setTimeout(() => { card.mesh.position.copy(freeSpot(card.zone)); closeQuiz(false); emote("sad"); notice(`${ZONES[card.zone].name}에서 다시 찾아요!`); }, 1300);
+          setTimeout(() => { card.mesh.position.copy(freeSpot(card.zone)); closeQuiz(false); emote("sad"); notice(`${ZONES[card.zone].name}?먯꽌 ?ㅼ떆 李얠븘??`); }, 1300);
         } else {
-          fb.textContent = "다시 골라 볼까?";
+          fb.textContent = "?ㅼ떆 怨⑤씪 蹂쇨퉴?";
           showHint(true);
         }
         updateHud();
@@ -5288,39 +5428,140 @@
     window.addEventListener("keyup", e => { input.keys[e.code] = false; });
     window.addEventListener("blur", () => { input.keys = {}; });
 
-    // 왼쪽 엄지 조이스틱: 누른 곳에 나타남
+    // 터치 디바이스 감지 및 활성화 (태블릿/모바일 지원)
+    const detectTouchMode = () => {
+      const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+      if (hasTouch) document.body.classList.add("touch-device");
+    };
+    detectTouchMode();
+    window.addEventListener("pointerdown", e => {
+      if (e.pointerType === "touch") document.body.classList.add("touch-device");
+    }, { passive: true });
+    window.addEventListener("touchstart", () => {
+      document.body.classList.add("touch-device");
+    }, { once: true, passive: true });
+
+    // 화면 터치 이동 조이스틱: 화면을 터치해서 미는 방향으로 캐릭터 이동
     (function joystick() {
       const zone = $("joyZone"), base = $("joyBase"), knob = $("joyKnob");
       let id = null, cx = 0, cy = 0;
+      let mouseDragging = false, mlx = 0, mly = 0;
       const R = 56;
-      const place = (x, y) => { const r = zone.getBoundingClientRect(); base.style.left = (x - r.left) + "px"; base.style.top = (y - r.top) + "px"; base.style.bottom = "auto"; };
-      const reset = () => { id = null; input.jx = input.jy = 0; knob.style.transform = ""; base.style.left = "120px"; base.style.top = "auto"; base.style.bottom = "0"; base.style.transform = "translate(-50%, -60%)"; };
-      zone.addEventListener("pointerdown", e => { e.preventDefault(); id = e.pointerId; zone.setPointerCapture(id); cx = e.clientX; cy = e.clientY; base.style.transform = "translate(-50%, -50%)"; place(cx, cy); });
-      zone.addEventListener("pointermove", e => {
-        if (e.pointerId !== id) return;
-        let dx = e.clientX - cx, dy = e.clientY - cy; const d = Math.hypot(dx, dy);
-        if (d > R) { dx *= R / d; dy *= R / d; }
-        knob.style.transform = `translate(${dx}px, ${dy}px)`;
-        input.jx = dx / R; input.jy = -dy / R;
+      const place = (x, y) => {
+        base.style.left = x + "px";
+        base.style.top = y + "px";
+        base.style.bottom = "auto";
+      };
+      const reset = () => {
+        id = null;
+        input.jx = 0;
+        input.jy = 0;
+        knob.style.transform = "";
+        base.style.left = "110px";
+        base.style.top = "auto";
+        base.style.bottom = "100px";
+        base.style.transform = "translate(-50%, 50%)";
+        base.style.opacity = ".65";
+      };
+      zone.addEventListener("pointerdown", e => {
+        if (e.pointerType === "mouse") {
+          if (e.button !== 0) return;
+          mouseDragging = true;
+          isPointerDragging = true;
+          mlx = e.clientX;
+          mly = e.clientY;
+          try { zone.setPointerCapture(e.pointerId); } catch (err) {}
+          return;
+        }
+        e.preventDefault();
+        id = e.pointerId;
+        try { zone.setPointerCapture(id); } catch (err) {}
+        cx = e.clientX;
+        cy = e.clientY;
+        base.style.transform = "translate(-50%, -50%)";
+        base.style.opacity = "1";
+        place(cx, cy);
       });
-      ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => zone.addEventListener(ev, e => { if (e.pointerId === id) reset(); }));
+      zone.addEventListener("pointermove", e => {
+        if (mouseDragging && e.pointerType === "mouse") {
+          camYaw -= (e.clientX - mlx) * .008;
+          camPitch = Math.max(.2, Math.min(1.1, camPitch + (e.clientY - mly) * .004));
+          mlx = e.clientX;
+          mly = e.clientY;
+          return;
+        }
+        if (e.pointerId !== id) return;
+        let dx = e.clientX - cx, dy = e.clientY - cy;
+        const d = Math.hypot(dx, dy);
+        if (d > R * 1.5) {
+          const excess = d - R * 1.5;
+          cx += (dx / d) * excess;
+          cy += (dy / d) * excess;
+          place(cx, cy);
+          dx = e.clientX - cx;
+          dy = e.clientY - cy;
+        }
+        let cdx = dx, cdy = dy;
+        const curD = Math.hypot(cdx, cdy);
+        if (curD > R) {
+          cdx *= R / curD;
+          cdy *= R / curD;
+        }
+        knob.style.transform = "translate(" + cdx + "px, " + cdy + "px)";
+        if (curD < 4) {
+          input.jx = 0;
+          input.jy = 0;
+        } else {
+          input.jx = cdx / R;
+          input.jy = -cdy / R;
+        }
+      });
+      const endPointer = e => {
+        if (e.pointerType === "mouse" || mouseDragging) {
+          mouseDragging = false;
+          isPointerDragging = false;
+        }
+        if (e.pointerId === id) reset();
+      };
+      ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => zone.addEventListener(ev, endPointer));
       reset();
     })();
-    $("jumpBtn").addEventListener("pointerdown", e => { e.preventDefault(); P.jumpQueued = true; });
 
-    // 화면 끌어서 시점 돌리기 (마우스·손가락)
+    const triggerJump = e => {
+      e.preventDefault();
+      P.jumpQueued = true;
+    };
+    $("jumpBtn").addEventListener("pointerdown", triggerJump);
+    $("jumpBtn").addEventListener("touchstart", triggerJump, { passive: false });
+
     let isPointerDragging = false;
+    // 화면 끌어서 시점 돌리기 (마우스·오른쪽 화면 터치)
     (function dragCamera() {
       let id = null, lx = 0, ly = 0;
       const el = $("gameViewport");
-      el.addEventListener("pointerdown", e => { id = e.pointerId; lx = e.clientX; ly = e.clientY; isPointerDragging = true; el.setPointerCapture(id); });
+      el.addEventListener("pointerdown", e => {
+        id = e.pointerId;
+        lx = e.clientX;
+        ly = e.clientY;
+        isPointerDragging = true;
+        try { el.setPointerCapture(id); } catch (err) {}
+      });
       el.addEventListener("pointermove", e => {
         if (e.pointerId !== id) return;
-        camYaw -= (e.clientX - lx) * .008; camPitch = Math.max(.2, Math.min(1.1, camPitch + (e.clientY - ly) * .004));
-        lx = e.clientX; ly = e.clientY;
+        camYaw -= (e.clientX - lx) * .008;
+        camPitch = Math.max(.2, Math.min(1.1, camPitch + (e.clientY - ly) * .004));
+        lx = e.clientX;
+        ly = e.clientY;
       });
-      ["pointerup", "pointercancel"].forEach(ev => el.addEventListener(ev, () => { id = null; isPointerDragging = false; }));
-      el.addEventListener("wheel", e => { camDist = Math.max(5, Math.min(15, camDist + e.deltaY * .01)); }, { passive: true });
+      ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev =>
+        el.addEventListener(ev, () => {
+          id = null;
+          isPointerDragging = false;
+        })
+      );
+      el.addEventListener("wheel", e => {
+        camDist = Math.max(5, Math.min(15, camDist + e.deltaY * .01));
+      }, { passive: true });
     })();
 
     /* ───────────── 움직임과 충돌 ───────────── */
@@ -5509,10 +5750,14 @@
 
     function updateCamera(dt) {
       if (P.moving && !isPointerDragging) {
-        const desiredYaw = P.face + Math.PI;
-        let diff = desiredYaw - camYaw;
-        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
-        camYaw += diff * Math.min(1, dt * 2.8);
+        const forwardDot = (-Math.sin(camYaw)) * Math.sin(P.face) + (-Math.cos(camYaw)) * Math.cos(P.face);
+        // 전진/측면 이동 중일 때만 부드럽게 카메라가 캐릭터 뒤를 따라오고, 후진(뒤로가기) 중에는 카메라를 돌리지 않아 뱅글뱅글 도는 버그 방지
+        if (forwardDot > 0.15) {
+          const desiredYaw = P.face + Math.PI;
+          let diff = desiredYaw - camYaw;
+          diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+          camYaw += diff * Math.min(1, dt * 2.8);
+        }
       }
       const tgt = new THREE.Vector3(P.pos.x, P.pos.y + 1.1, P.pos.z);
       const want = new THREE.Vector3(
@@ -5557,9 +5802,8 @@
         d.visible = true;
         d.position.set(P.pos.x + dx * u, .06, P.pos.z + dz * u);
         d.material.opacity = Math.min(1, (nd - .9 - along) / 1.5, along / 1.6) * .9;
-        const diffCfg = near ? DIFF_CONFIG[near.diff] : null;
-        if (diffCfg) d.material.color.setHex(diffCfg.ringHex);
-        else d.material.color.copy(GUIDE_COL);
+        // 문제를 찾아가는 점선은 항상 깨끗한 흰선(White)으로만 표시
+        d.material.color.copy(GUIDE_COL);
       });
     }
 
