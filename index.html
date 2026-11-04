@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -656,7 +656,7 @@
       village: { name: "생활 마을", color: "#FF8A3D", hex: 0xFF8A3D, x: 34, z: -30, rMin: 8.5, rMax: 18, r: 20, ground: 0xF1DDB0, words: LIFE },
       plaza:   { name: "문제풀이 광장", color: "#94A3B8", hex: 0x94A3B8, x: -34, z: 30, rMin: 5.0, rMax: 16, r: 18, ground: 0x94A3B8, words: MALMOI, malmoi: true },
       park:    { name: "점프 놀이터", color: "#E5C287", hex: 0xE5C287, x: 34, z: 30, rMin: 3.5, rMax: 16, r: 18, ground: 0xE5C287, words: null },
-      center:  { name: "중앙 광장", color: "#CBD5E1", hex: 0xCBD5E1, x: 0, z: 0, rMin: 3.8, rMax: 12.0, r: 12.8, ground: 0xE2E8F0, words: null }
+      center:  { name: "중앙 광장", color: "#FFFFFF", hex: 0xFFFFFF, x: 0, z: 0, rMin: 3.8, rMax: 12.0, r: 12.8, ground: 0x64748B, words: null }
     };
     const REGIONS = ZONES;
     const ISLAND_R = 70;
@@ -970,7 +970,8 @@
       const c = document.createElement("canvas"); c.width = w; c.height = h;
       const x = c.getContext("2d");
       x.fillStyle = bg; roundRect(x, 6, 6, w - 12, h - 12, 40); x.fill();
-      x.lineWidth = 10; x.strokeStyle = "rgba(255,255,255,.9)"; x.stroke();
+      const isLightBg = bg === "#fff" || bg === "#ffffff" || bg === "#FFFFFF";
+      x.lineWidth = 10; x.strokeStyle = isLightBg ? "rgba(100, 116, 139, 0.75)" : "rgba(255,255,255,.9)"; x.stroke();
       x.fillStyle = fg; x.font = `${size}px 'BMJUA', 'Jua', 'BM JUA', sans-serif`; x.textAlign = "center"; x.textBaseline = "middle";
       x.fillText(text, w / 2, h / 2 + 6);
       return setSRGB(new THREE.CanvasTexture(c));
@@ -1041,7 +1042,7 @@
           forest:  { s1: 0x4CAF50, s2: 0xA7E8BD, s3: 0x4A6B3D }, // 스테이지 3: 밝고 화사한 민트/에메랄드 숲 바닥
           village: { s1: 0xF59E0B, s2: 0xFDE68A, s3: 0xD4A359 }, // 스테이지 3: 따뜻하고 밝은 골든 앰버 마을 바닥
           plaza:   { s1: 0x94A3B8, s2: 0xA8B5C4, s3: 0x64748B }, // 문제풀이 광장: 분수대 석조 톤 일치 & 차분하게 톤다운된 슬레이트 그레이
-          center:  { s1: 0xE2E8F0, s2: 0xF8FAFC, s3: 0xCBD5E1 }, // 중앙 광장: 시계탑 석조 기단 및 본체 일치 클래식 석조 팔레트 바닥
+          center:  { s1: 0xFFFFFF, s2: 0xFFFFFF, s3: 0xFFFFFF }, // 중앙 광장: 보도블럭 캔버스 텍스처 원색 유지
           park:    { s1: 0xE5C287, s2: 0xD8B273, s3: 0xD6C18E }  // 스테이지 3: 밝고 따뜻한 황금빛 놀이터 모래 바닥
         }[key] || { s1: z.ground, s2: z.ground, s3: z.ground };
         const patchMat = stdPalette(patchPalette.s1, patchPalette.s2, patchPalette.s3);
@@ -1050,21 +1051,18 @@
           const regItem = stagePaletteItems[stagePaletteItems.length - 1];
           if (regItem) regItem.isParkSand = true;
         }
+        if (key === "center") {
+          patchMat.map = createPlazaPavementTexture(1024);
+          patchMat.roughness = 0.85;
+          patchMat.needsUpdate = true;
+        }
         const patch = new THREE.Mesh(new THREE.CircleGeometry(z.r, 40), patchMat);
         patch.rotation.x = -Math.PI / 2; patch.position.set(z.x, 0.01, z.z); patch.receiveShadow = true; scene.add(patch);
-        let sx, sz, signRot;
-        if (key === "plaza") {
-          // 문제풀이 광장의 깃발(i=7: -45도, i=0: 0도) 사이의 정확한 정중앙 각도: -22.5도 (-PI/8)
-          const midAngle = -Math.PI / 8;
-          sx = z.x + Math.cos(midAngle) * (z.r - 1.2);
-          sz = z.z + Math.sin(midAngle) * (z.r - 1.2);
-          signRot = midAngle + Math.PI / 2;
-        } else {
-          const toCenter = Math.atan2(-z.x, -z.z);
-          sx = z.x + Math.sin(toCenter) * (z.r - 1);
-          sz = z.z + Math.cos(toCenter) * (z.r - 1);
-          signRot = toCenter;
-        }
+        // 모든 영역 푯말은 다른 영역들과 동일하게 중앙광장(0, 0)에서 영역으로 들어오는 진입로 입구에 위치하며, 중앙광장을 정면으로 바라봄
+        const toCenter = Math.atan2(-z.x, -z.z);
+        const sx = z.x + Math.sin(toCenter) * (z.r - 1);
+        const sz = z.z + Math.cos(toCenter) * (z.r - 1);
+        const signRot = toCenter;
 
         // 지지대 기둥 (표지판 하단까지만 자연스럽게 닿도록 높이를 조정하여 글씨 면에 튀어나오지 않음)
         const postH = 2.07;
@@ -1089,13 +1087,15 @@
         signGroup.add(bracket);
 
         // 앞면 표지판 (+Z 방향)
-        const frontMat = new THREE.MeshBasicMaterial({ map: textTexture(z.name, z.color, "#fff"), transparent: true });
+        const signBg = (key === "center") ? "#FFFFFF" : z.color;
+        const signFg = (key === "center") ? "#64748B" : "#fff";
+        const frontMat = new THREE.MeshBasicMaterial({ map: textTexture(z.name, signBg, signFg), transparent: true });
         const frontBoard = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.25), frontMat);
         frontBoard.position.set(0, 0, 0.055);
         signGroup.add(frontBoard);
 
         // 뒷면 표지판 (-Z 방향, 180도 회전시켜 뒤에서 보았을 때 글씨가 뒤집히지 않고 똑바로 보이도록 설정)
-        const backMat = new THREE.MeshBasicMaterial({ map: textTexture(z.name, z.color, "#fff"), transparent: true });
+        const backMat = new THREE.MeshBasicMaterial({ map: textTexture(z.name, signBg, signFg), transparent: true });
         const backBoard = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.25), backMat);
         backBoard.position.set(0, 0, -0.055);
         backBoard.rotation.y = Math.PI;
@@ -1127,6 +1127,9 @@
 
       // 중앙 광장 구조물 (시계탑, 가로등, 벤치, 화단)
       buildCentralPlaza();
+
+      // 점프 놀이터 돌 울타리 (작은 돌맹이와 바위 경계선)
+      buildParkRockFence();
 
       // 생활 마을: 중앙 호수 + 호수 둘레 집들
       const V = ZONES.village, Z = ZONES.plaza, K = ZONES.park; if (true) {
@@ -2628,17 +2631,137 @@
       return setSRGB(new THREE.CanvasTexture(c));
     }
 
+    // ── 중앙 광장 보도블럭 바닥 텍스처 생성기 (흰색 지그재그 직사각형 블록 + 밝은 회색 줄눈 바닥 + 3D 그림자) ──
+    function createPlazaPavementTexture(size = 1024) {
+      const c = document.createElement("canvas");
+      c.width = size;
+      c.height = size;
+      const ctx = c.getContext("2d");
+
+      const cx = size / 2, cy = size / 2;
+      const radius = size / 2;
+
+      // 1. 기본 줄눈/기저 바닥 (밝고 부드러운 슬레이트 회색 모르타르 바닥)
+      ctx.fillStyle = "#64748B";
+      ctx.fillRect(0, 0, size, size);
+
+      // 미세한 모래/모르타르 질감 노이즈
+      ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+      for (let i = 0; i < 4000; i++) {
+        const nx = Math.random() * size, ny = Math.random() * size, ns = 1 + Math.random() * 2;
+        ctx.fillRect(nx, ny, ns, ns);
+      }
+
+      // 2. 블록 크기 및 넓은 간격(줄눈) 설정
+      // 가로 82px, 세로 36px, 간격(gap) 16px (25.6m 지름 광장에서 약 40cm 폭의 넉넉한 간격)
+      const bw = 82, bh = 36;
+      const gapX = 16, gapY = 16;
+      const stepX = bw + gapX; // 98px
+      const stepY = bh + gapY; // 52px
+
+      // 중앙 (cx, cy) 기준으로 대칭 격자 행/열 범위 계산
+      const halfRows = Math.ceil(cy / stepY) + 1;
+      const halfCols = Math.ceil(cx / stepX) + 1;
+
+      // 블록 색상 팔레트 (화사하고 품격 있는 대리석·백화강석 톤의 5가지 화이트/밝은 석재 변량)
+      const whiteShades = [
+        "#FFFFFF", // Pure white
+        "#F8FAFC", // Slate 50
+        "#F1F5F9", // Slate 100
+        "#E2E8F0", // Slate 200
+        "#F3F4F6"  // Cool gray 100
+      ];
+
+      // 3. 지그재그(Staggered Running Bond) 배열로 직사각형 보도블럭 그리기
+      for (let r = -halfRows; r <= halfRows; r++) {
+        const by = cy + r * stepY - bh / 2;
+        // 행마다 가로로 반 블록(stepX / 2)씩 지그재그로 엇갈리게 배치
+        const xOffset = (Math.abs(r) % 2 === 1) ? stepX / 2 : 0;
+
+        for (let col = -halfCols; col <= halfCols; col++) {
+          const bx = cx + col * stepX + xOffset - bw / 2;
+
+          // 원형 광장 바깥 영역은 렌더링 생략 (여유 반경 radius + 70)
+          const dist = Math.hypot(bx + bw / 2 - cx, by + bh / 2 - cy);
+          if (dist > radius + 70) continue;
+
+          // 결정론적 해시로 블록별 색상 선택 (자연스러운 백색 석재 톤 변화)
+          const hash = Math.sin(r * 127.1 + col * 311.7) * 43758.5453;
+          const shadeIdx = Math.floor(Math.abs(hash - Math.floor(hash)) * whiteShades.length);
+          const baseColor = whiteShades[shadeIdx];
+
+          // ── A. 보도블럭 입체 그림자 효과 (부드러운 드롭 섀도우) ──
+          // 우하단 방향으로 떨어지는 그림자 (광원: 좌상단)
+          ctx.fillStyle = "rgba(30, 41, 59, 0.35)";
+          roundRect(ctx, bx + 4, by + 5, bw, bh, 3);
+          ctx.fill();
+
+          // 틈새 밀착 짙은 그림자
+          ctx.fillStyle = "rgba(30, 41, 59, 0.20)";
+          roundRect(ctx, bx + 2, by + 2, bw, bh, 3);
+          ctx.fill();
+
+          // ── B. 보도블럭 본체 ──
+          ctx.fillStyle = baseColor;
+          roundRect(ctx, bx, by, bw, bh, 3);
+          ctx.fill();
+
+          // ── C. 블록 상단 미세 그라데이션 (3D 볼록 입체감) ──
+          const grad = ctx.createLinearGradient(bx, by, bx, by + bh);
+          grad.addColorStop(0, "rgba(255, 255, 255, 0.45)");
+          grad.addColorStop(0.3, "rgba(255, 255, 255, 0.15)");
+          grad.addColorStop(1, "rgba(148, 163, 184, 0.28)");
+          ctx.fillStyle = grad;
+          roundRect(ctx, bx, by, bw, bh, 3);
+          ctx.fill();
+
+          // ── D. 좌상단 햇빛 하이라이트 모서리 베벨선 ──
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(bx + 2, by + bh - 2);
+          ctx.lineTo(bx + 2, by + 2);
+          ctx.lineTo(bx + bw - 2, by + 2);
+          ctx.stroke();
+
+          // ── E. 우하단 어두운 챔퍼 모서리 음영선 ──
+          ctx.strokeStyle = "rgba(100, 116, 139, 0.45)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(bx + bw - 2, by + 2);
+          ctx.lineTo(bx + bw - 2, by + bh - 2);
+          ctx.lineTo(bx + 2, by + bh - 2);
+          ctx.stroke();
+        }
+      }
+
+      // 4. 광장 외곽 원형 경계석(Curb Ring) 테두리 장식
+      ctx.strokeStyle = "rgba(241, 245, 249, 0.85)";
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius - 6, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(71, 85, 105, 0.4)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius - 11, 0, Math.PI * 2);
+      ctx.stroke();
+
+      return setSRGB(new THREE.CanvasTexture(c));
+    }
+
     function buildCentralPlaza() {
       const plazaGroup = new THREE.Group();
       scene.add(plazaGroup);
 
       // ── 1. 중앙 시계탑 (Grand 4-Faced Clock Tower) ──
       const towerGroup = new THREE.Group();
-      towerGroup.position.set(0, 0, -2.5);
+      towerGroup.position.set(0, 0, 0);
 
-      // 3단 석조 계단 기단 (Plinth)
-      const plinthMat = std(0xE2E8F0, { roughness: 0.8 });
-      const trimMat = std(0xCBD5E1, { roughness: 0.75 });
+      // 3단 석조 계단 기단 (Plinth) - 밝은 회색 (Light Slate Gray)
+      const plinthMat = std(0x64748B, { roughness: 0.8 });
+      const trimMat = std(0x94A3B8, { roughness: 0.75 });
       const p1 = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.4, 3.6), plinthMat);
       p1.position.y = 0.2; p1.castShadow = true; p1.receiveShadow = true; towerGroup.add(p1);
 
@@ -2648,13 +2771,13 @@
       const p3 = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.3, 2.5), trimMat);
       p3.position.y = 0.9; p3.castShadow = true; p3.receiveShadow = true; towerGroup.add(p3);
 
-      // 타워 몸통 기둥 (Tower Shaft)
+      // 타워 가운데 기둥 몸통 (Tower Shaft) 및 시계 주변부 (Clock Room) - 화사한 클래식 화이트로 복원
       const bodyMat = std(0xF8FAFC, { roughness: 0.7 });
       const towerBody = new THREE.Mesh(new THREE.BoxGeometry(2.1, 5.0, 2.1), bodyMat);
       towerBody.position.y = 1.05 + 2.5; towerBody.castShadow = true; towerBody.receiveShadow = true; towerGroup.add(towerBody);
 
-      // 타워 모서리 기둥 (Corner Pilasters)
-      const colMat = std(0x94A3B8, { roughness: 0.6 });
+      // 가운데 기둥의 모서리에 튀어나와있는 부분들 (Corner Pilasters) - 밝은 회색
+      const colMat = std(0x64748B, { roughness: 0.6 });
       [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([cx, cz]) => {
         const col = new THREE.Mesh(new THREE.BoxGeometry(0.25, 5.0, 0.25), colMat);
         col.position.set(cx * 1.05, 1.05 + 2.5, cz * 1.05);
@@ -2666,7 +2789,7 @@
       const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.8, 0.1), colMat);
       doorFrame.position.set(0, 1.05 + 0.9, 1.08);
       towerGroup.add(doorFrame);
-      const doorWood = new THREE.Mesh(new THREE.BoxGeometry(0.82, 1.62, 0.12), std(0x78350F, { roughness: 0.55 }));
+      const doorWood = new THREE.Mesh(new THREE.BoxGeometry(0.82, 1.62, 0.12), std(0x64748B, { roughness: 0.55 }));
       doorWood.position.set(0, 1.05 + 0.81, 1.1);
       towerGroup.add(doorWood);
 
@@ -2675,7 +2798,7 @@
       cornice.position.y = 6.275; cornice.castShadow = true; towerGroup.add(cornice);
 
       // 발코니 장식 난간
-      const railMat = std(0x475569, { metalness: 0.5, roughness: 0.3 });
+      const railMat = std(0x64748B, { metalness: 0.4, roughness: 0.3 });
       const railGeo = new THREE.BoxGeometry(2.3, 0.08, 0.08);
       [[-1.12, 0, Math.PI / 2], [1.12, 0, Math.PI / 2], [0, -1.12, 0], [0, 1.12, 0]].forEach(([rx, rz, ry]) => {
         const r = new THREE.Mesh(railGeo, railMat);
@@ -2717,8 +2840,8 @@
       const upperCornice = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.3, 2.2), trimMat);
       upperCornice.position.y = 8.65; upperCornice.castShadow = true; towerGroup.add(upperCornice);
 
-      // 코발트 블루 첨탑 피라미드 지붕
-      const roofMat = std(0x1D4ED8, { roughness: 0.45 });
+      // 꼭대기 피라미드 지붕 - 밝은 회색
+      const roofMat = std(0x64748B, { roughness: 0.45 });
       const spireRoof = new THREE.Mesh(new THREE.ConeGeometry(1.65, 3.2, 4), roofMat);
       spireRoof.position.y = 10.4;
       spireRoof.rotation.y = Math.PI / 4;
@@ -2739,16 +2862,16 @@
       plazaGroup.add(towerGroup);
       makeFadeable(towerGroup);
 
-      // 시계탑 충돌 영역 등록
-      commonBoxes.push({ minx: -1.9, maxx: 1.9, minz: -4.4, maxz: -0.6, top: 13 });
-      commonColliders.push({ x: 0, z: -2.5, r: 2.2 });
+      // 시계탑 충돌 영역 등록 (중앙 0, 0 기준)
+      commonBoxes.push({ minx: -1.9, maxx: 1.9, minz: -1.9, maxz: 1.9, top: 13 });
+      commonColliders.push({ x: 0, z: 0, r: 2.2 });
 
       // ── 2. 클래식 가로등 (Victorian Street Lamps) ──
       function createStreetLamp(x, z) {
         const lamp = new THREE.Group();
         lamp.position.set(x, 0, z);
 
-        const ironMat = std(0x1E293B, { roughness: 0.5, metalness: 0.5 });
+        const ironMat = std(0x64748B, { roughness: 0.45, metalness: 0.4 }); // 밝은 회색 주철
         const brassMat = std(0xF59E0B, { roughness: 0.3, metalness: 0.8 });
 
         // 기단 받침
@@ -2794,15 +2917,15 @@
         commonColliders.push({ x, z, r: 0.5 });
       }
 
-      // 異뺤냼??以묒븰 愿묒옣(諛섍꼍 12.8m)??留욎떠 ?멸낸??媛濡쒕벑 諛곗튂 (諛섍꼍 10.5m)
-      const lampRadius = 10.5;
-      const lampPositions = [
-        [0 + Math.cos(Math.PI * 0.25) * lampRadius, -2.5 + Math.sin(Math.PI * 0.25) * lampRadius],
-        [0 + Math.cos(Math.PI * 0.75) * lampRadius, -2.5 + Math.sin(Math.PI * 0.75) * lampRadius],
-        [0 + Math.cos(Math.PI * 1.25) * lampRadius, -2.5 + Math.sin(Math.PI * 1.25) * lampRadius],
-        [0 + Math.cos(Math.PI * 1.75) * lampRadius, -2.5 + Math.sin(Math.PI * 1.75) * lampRadius]
-      ];
-      lampPositions.forEach(([lx, lz]) => createStreetLamp(lx, lz));
+      // 원 가장자리(반경 11.8m)를 따라 8개의 클래식 가로등을 고르게 원형 배치
+      const lampRadius = 11.8;
+      const lampCount = 8;
+      for (let i = 0; i < lampCount; i++) {
+        const la = i * (Math.PI * 2 / lampCount) + (Math.PI / 8);
+        const lx = Math.cos(la) * lampRadius;
+        const lz = Math.sin(la) * lampRadius;
+        createStreetLamp(lx, lz);
+      }
 
       // ── 3. 공원 벤치 (Plaza Park Benches) ──
       function createBench(x, z, rotY) {
@@ -2811,7 +2934,7 @@
         bench.rotation.y = rotY;
 
         const woodMat = std(0x92400E, { roughness: 0.55 });
-        const legMat = std(0x0F172A, { roughness: 0.4, metalness: 0.6 });
+        const legMat = std(0x64748B, { roughness: 0.4, metalness: 0.5 }); // 밝은 회색 주철 다리
 
         // 주철 다리 및 팔걸이 프레임 (좌/우)
         [-0.85, 0.85].forEach(bx => {
@@ -2869,27 +2992,24 @@
         });
       }
 
-      // ?쒓퀎??以묒떖 湲곗? 愿묒옣 援ъ“臾?諛곗튂 (?먰삎 洹좏삎 諛곗튂)
-      const tX = 0, tZ = -2.5;
-
-      // ?쒓퀎?묒뿉??異⑸텇??嫄곕━瑜??먯뼱 6媛쒖쓽 踰ㅼ튂瑜??먰삎?쇰줈 諛곗튂 (諛섍꼍 8.6m, ?쒓퀎??議곕쭩)
-      const benchRadius = 8.6;
+      // 가로등(반경 11.8m) 쪽으로 이동시켜 6개의 공원 벤치를 대칭 원형 배치 (반경 9.8m, 중앙 시계탑 조망)
+      const benchRadius = 9.8;
       const benchCount = 6;
       for (let i = 0; i < benchCount; i++) {
         const ba = i * (Math.PI * 2 / benchCount);
-        const bx = tX + Math.cos(ba) * benchRadius;
-        const bz = tZ + Math.sin(ba) * benchRadius;
-        const rotY = Math.atan2(tX - bx, tZ - bz);
+        const bx = Math.cos(ba) * benchRadius;
+        const bz = Math.sin(ba) * benchRadius;
+        const rotY = Math.atan2(-bx, -bz);
         createBench(bx, bz, rotY);
       }
 
-      // ?? 4. 踰쎈룎 ?붾떒 (?쒓퀎?묎낵 踰ㅼ튂 ?ъ씠 以묎컙 ?곸젙 媛꾧꺽 遺꾩궛 諛곗튂) ??
-      const planterRadius = 4.8;
+      // ── 4. 벽돌 화단 (시계탑 4개 대각선 모서리에 대칭 분산 배치, 반경 4.0m) ──
+      const planterRadius = 4.0;
       const planterPositions = [
-        [tX + Math.cos(Math.PI * 0.25) * planterRadius, tZ + Math.sin(Math.PI * 0.25) * planterRadius],
-        [tX + Math.cos(Math.PI * 0.75) * planterRadius, tZ + Math.sin(Math.PI * 0.75) * planterRadius],
-        [tX + Math.cos(Math.PI * 1.25) * planterRadius, tZ + Math.sin(Math.PI * 1.25) * planterRadius],
-        [tX + Math.cos(Math.PI * 1.75) * planterRadius, tZ + Math.sin(Math.PI * 1.75) * planterRadius]
+        [Math.cos(Math.PI * 0.25) * planterRadius, Math.sin(Math.PI * 0.25) * planterRadius],
+        [Math.cos(Math.PI * 0.75) * planterRadius, Math.sin(Math.PI * 0.75) * planterRadius],
+        [Math.cos(Math.PI * 1.25) * planterRadius, Math.sin(Math.PI * 1.25) * planterRadius],
+        [Math.cos(Math.PI * 1.75) * planterRadius, Math.sin(Math.PI * 1.75) * planterRadius]
       ];
       const potMat = std(0xB45309, { roughness: 0.85 }); // 따뜻한 테라코타 벽돌색
       const soilMat = std(0x451A03, { roughness: 0.95 }); // 짙은 부엽토
@@ -2925,6 +3045,350 @@
 
         plazaGroup.add(planter);
         commonColliders.push({ x: px, z: pz, r: 0.9 });
+      });
+    }
+
+    // ── 점프 놀이터 돌맹이 & 바위 울타리 (자연스러운 외곽 경계선) ──
+    function buildParkRockFence() {
+      const parkFenceGroup = new THREE.Group();
+      scene.add(parkFenceGroup);
+
+      const K = ZONES.park;
+      const toCenter = Math.atan2(-K.x, -K.z);
+      const signX = K.x + Math.sin(toCenter) * (K.r - 1);
+      const signZ = K.z + Math.cos(toCenter) * (K.r - 1);
+
+      // 자연스러운 다양한 석조 질감 팔레트
+      const stoneMats = [
+        std(0xCBD5E1, { roughness: 0.85, flatShading: true }), // 밝은 슬레이트 화강석
+        std(0x94A3B8, { roughness: 0.9, flatShading: true }),  // 차분한 회색 바위
+        std(0xA8A29E, { roughness: 0.85, flatShading: true }), // 따뜻한 강돌색
+        std(0xD6D3D1, { roughness: 0.8, flatShading: true }),  // 밝은 자갈석
+        std(0x78716C, { roughness: 0.95, flatShading: true })  // 묵직한 짙은 암석
+      ];
+      const mossMat = std(0x4D7C0F, { roughness: 0.9 });
+      const flowerCols = [0xFACC15, 0xFFFFFF, 0xEC4899];
+
+      const rockCount = 58;
+      for (let i = 0; i < rockCount; i++) {
+        const a = (i / rockCount) * Math.PI * 2 + (Math.sin(i * 3.7) * 0.02);
+        const r = K.r - 0.25 + Math.sin(i * 5.1) * 0.35;
+        const x = K.x + Math.cos(a) * r;
+        const z = K.z + Math.sin(a) * r;
+
+        // 푯말 및 중앙 진입로(약 4.2m)는 입구 통로로 열어둠
+        const distToSign = Math.hypot(x - signX, z - signZ);
+        if (distToSign < 4.0) continue;
+
+        // 1. 메인 바위 (Boulders)
+        const s = 0.55 + Math.abs(Math.sin(i * 4.3)) * 0.35; // 0.55 ~ 0.9m
+        const mat = stoneMats[i % stoneMats.length];
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(s, 0), mat);
+        const scaleY = 0.7 + Math.abs(Math.cos(i * 2.9)) * 0.45;
+        const scaleXZ = 0.9 + Math.abs(Math.sin(i * 1.7)) * 0.35;
+        rock.scale.set(scaleXZ, scaleY, scaleXZ);
+        rock.position.set(x, s * scaleY * 0.42, z);
+        rock.rotation.set(Math.sin(i * 1.3) * 0.5, (i * 1.618) % (Math.PI * 2), Math.cos(i * 2.1) * 0.3);
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        parkFenceGroup.add(rock);
+
+        // 충돌체 등록 (플레이어가 바위 울타리를 인식하고 카드가 바위 속에 묻히지 않도록)
+        commonColliders.push({ x, z, r: s * 0.75 });
+
+        // 2. 바위 곁 작은 돌맹이 (Pebbles & Small Stones)
+        const pebbleCount = (i % 2 === 0) ? 2 : 1;
+        for (let p = 0; p < pebbleCount; p++) {
+          const pa = a + (p === 0 ? 0.04 : -0.04) + Math.sin(i + p) * 0.02;
+          const pr = r + (p === 0 ? 0.45 : -0.45) * (0.8 + Math.random() * 0.4);
+          const px = K.x + Math.cos(pa) * pr;
+          const pz = K.z + Math.sin(pa) * pr;
+          const ps = 0.2 + Math.abs(Math.sin(i * 7.1 + p)) * 0.18; // 0.2 ~ 0.38m
+          const pmat = stoneMats[(i + p + 1) % stoneMats.length];
+          const pebble = new THREE.Mesh(new THREE.DodecahedronGeometry(ps, 0), pmat);
+          pebble.scale.set(1.1, 0.65, 1.0);
+          pebble.position.set(px, ps * 0.32, pz);
+          pebble.rotation.set(Math.random(), Math.random(), 0);
+          pebble.castShadow = true;
+          pebble.receiveShadow = true;
+          parkFenceGroup.add(pebble);
+        }
+
+        // 3. 바위 틈새 작은 이끼 및 들꽃 포인트 (자연스러운 울타리 분위기)
+        if (i % 4 === 0) {
+          const moss = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), mossMat);
+          moss.scale.set(1.4, 0.45, 1.2);
+          moss.position.set(x + Math.sin(i) * 0.35, 0.08, z + Math.cos(i) * 0.35);
+          parkFenceGroup.add(moss);
+
+          if (i % 8 === 0) {
+            const flowerCol = flowerCols[(i / 8) % flowerCols.length];
+            const flower = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), std(flowerCol));
+            flower.position.set(x + Math.sin(i) * 0.35, 0.16, z + Math.cos(i) * 0.35);
+            parkFenceGroup.add(flower);
+          }
+        }
+      }
+    }
+
+    // ── 문제풀이 광장 캐릭터 동상 명판 캔버스 텍스처 (황동 & 에나멜 기단 명패) ──
+    function makeStatuePlaqueTexture(nameKo, nameEn) {
+      const c = document.createElement("canvas");
+      c.width = 512; c.height = 192;
+      const ctx = c.getContext("2d");
+
+      // 다크 메탈릭 브론즈 바탕
+      ctx.fillStyle = "#1E293B";
+      roundRect(ctx, 6, 6, 500, 180, 18);
+      ctx.fill();
+
+      // 외부 골드 테두리
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#F59E0B";
+      ctx.stroke();
+
+      // 내부 은은한 황동 라인
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(253, 230, 138, 0.65)";
+      roundRect(ctx, 16, 16, 480, 160, 12);
+      ctx.stroke();
+
+      // 모서리 골드 리벳 장식
+      ctx.fillStyle = "#F59E0B";
+      [[26, 26], [486, 26], [26, 166], [486, 166]].forEach(([rx, ry]) => {
+        ctx.beginPath(); ctx.arc(rx, ry, 5, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // 한글 영웅 이름
+      ctx.fillStyle = "#FDE047";
+      ctx.font = "bold 68px 'BMJUA', 'Jua', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.75)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 3;
+      ctx.fillText(nameKo, 256, 76);
+
+      // 영문 서브타이틀
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.fillStyle = "#E2E8F0";
+      ctx.font = "bold 26px 'Jua', 'BMJUA', sans-serif";
+      ctx.letterSpacing = "6px";
+      ctx.fillText(nameEn, 256, 136);
+
+      return setSRGB(new THREE.CanvasTexture(c));
+    }
+
+    // ── 문제풀이 광장 캐릭터 동상 세트 (탐험가, 로보트, 마법사 석고동상) ──
+    function buildPlazaHeroStatues(Z, stage1Group) {
+      // 1. 기준 위치 계산:
+      // 문제풀이 광장 푯말(중앙광장 방향 진입로 입구)과 광장 중심 기준 정확히 대칭이 되는 반대편 지점
+      const entranceAngle = Math.atan2(-Z.z, -Z.x);
+      const oppAngle = entranceAngle + Math.PI;
+      // 분수대(r = 3.8m)와 외곽 깃발(r = 16.8m) 사이의 정중앙 반경: R = 10.0m
+      const cx = Z.x + Math.cos(oppAngle) * 10.0; // 약 -41.50
+      const cz = Z.z + Math.sin(oppAngle) * 10.0; // 약 36.62
+
+      // 중앙광장(0, 0)을 정면으로 향하는 시선 방향 벡터
+      const toCenterX = -cx, toCenterZ = -cz;
+      const len = Math.hypot(toCenterX, toCenterZ);
+      const dirX = toCenterX / len, dirZ = toCenterZ / len;
+
+      // 중앙광장 시선에 수직인 좌우 접선 벡터 (중앙광장에서 바라볼 때: 왼쪽 Wizard, 중앙 Explorer, 오른쪽 Cyberbot)
+      const tanX = -dirZ, tanZ = dirX;
+
+      // 동상 크기 2배 확대에 맞춘 여유 있는 간격 배치
+      const spacing = 3.9;
+      const statueDefs = [
+        {
+          type: "wizard",
+          nameKo: "마 법 사",
+          nameEn: "WIZARD",
+          offset: -spacing, // 좌측
+          colH: 1.35,
+          colW: 2.2
+        },
+        {
+          type: "explorer",
+          nameKo: "탐 험 가",
+          nameEn: "EXPLORER",
+          offset: 0.0, // 중앙 (대장으로서 살짝 더 높고 위엄 있는 기단)
+          colH: 1.55,
+          colW: 2.4
+        },
+        {
+          type: "cyberbot",
+          nameKo: "로 보 트",
+          nameEn: "CYBERBOT",
+          offset: spacing, // 우측
+          colH: 1.35,
+          colW: 2.2
+        }
+      ];
+
+      statueDefs.forEach(def => {
+        const sx = cx + tanX * def.offset;
+        const sz = cz + tanZ * def.offset;
+        // 개별 동상도 중앙광장(0, 0)을 정면으로 바라보도록 Y축 회전 설정
+        const rotY = Math.atan2(-sx, -sz);
+
+        const sg = new THREE.Group();
+        sg.position.set(sx, 0, sz);
+        sg.rotation.y = rotY;
+
+        const w = def.colW, h = def.colH;
+
+        // [기단 1단] 최하단 넓은 석조 기단 바닥돌 (Sub-base)
+        const baseSlab = new THREE.Mesh(
+          new THREE.BoxGeometry(w + 0.8, 0.35, w + 0.8),
+          stdPalette(0xCBD5E1, 0xE2E8F0, 0x94A3B8, { roughness: 0.85 })
+        );
+        baseSlab.position.y = 0.175;
+        baseSlab.castShadow = true; baseSlab.receiveShadow = true;
+        sg.add(baseSlab);
+
+        // [기단 2단] 중단 계단석 (Plinth Base)
+        const midSlab = new THREE.Mesh(
+          new THREE.BoxGeometry(w + 0.4, 0.28, w + 0.4),
+          stdPalette(0xE2E8F0, 0xF1F5F9, 0xCBD5E1, { roughness: 0.82 })
+        );
+        midSlab.position.y = 0.35 + 0.14;
+        midSlab.castShadow = true; midSlab.receiveShadow = true;
+        sg.add(midSlab);
+
+        // [기단 3단] 메인 순백 석고/대리석 사각 기둥 (Die Column)
+        const mainCol = new THREE.Mesh(
+          new THREE.BoxGeometry(w, h, w),
+          stdPalette(0xF8FAFC, 0xFFFFFF, 0xE2E8F0, { roughness: 0.80 })
+        );
+        mainCol.position.y = 0.63 + h / 2;
+        mainCol.castShadow = true; mainCol.receiveShadow = true;
+        sg.add(mainCol);
+
+        // 기둥 4개 모서리 클래식 필라스터 (돌출 기둥 몰딩)
+        [-w / 2 + 0.12, w / 2 - 0.12].forEach(px => {
+          [-w / 2 + 0.12, w / 2 - 0.12].forEach(pz => {
+            const pilaster = new THREE.Mesh(
+              new THREE.BoxGeometry(0.24, h, 0.24),
+              stdPalette(0xE2E8F0, 0xF1F5F9, 0xCBD5E1, { roughness: 0.80 })
+            );
+            pilaster.position.set(px, 0.63 + h / 2, pz);
+            pilaster.castShadow = true;
+            sg.add(pilaster);
+          });
+        });
+
+        // [기단 4단] 기둥 상단 처마 몰딩 (Cornice Capital)
+        const capital = new THREE.Mesh(
+          new THREE.BoxGeometry(w + 0.32, 0.22, w + 0.32),
+          stdPalette(0xE2E8F0, 0xF1F5F9, 0xCBD5E1, { roughness: 0.82 })
+        );
+        capital.position.y = 0.63 + h + 0.11;
+        capital.castShadow = true; capital.receiveShadow = true;
+        sg.add(capital);
+
+        // [기단 5단] 동상 안치 상단 석판 (Top Pedestal Slab)
+        const topSlab = new THREE.Mesh(
+          new THREE.BoxGeometry(w + 0.1, 0.12, w + 0.1),
+          stdPalette(0xF8FAFC, 0xFFFFFF, 0xE2E8F0, { roughness: 0.80 })
+        );
+        topSlab.position.y = 0.63 + h + 0.22 + 0.06;
+        topSlab.castShadow = true; topSlab.receiveShadow = true;
+        sg.add(topSlab);
+
+        const pedestalTopY = 0.63 + h + 0.34;
+
+        // [전면 명패] 중앙광장(정면 +Z)을 향하는 세련된 다크 슬레이트 & 골드 명판 (2배 크기에 맞춤)
+        const plaqueFrame = new THREE.Mesh(
+          new THREE.BoxGeometry(1.4, 0.52, 0.06),
+          std(0x334155, { roughness: 0.35, metalness: 0.25 })
+        );
+        plaqueFrame.position.set(0, 0.63 + h * 0.52, w / 2 + 0.035);
+        plaqueFrame.castShadow = true;
+        sg.add(plaqueFrame);
+
+        const plaqueTex = makeStatuePlaqueTexture(def.nameKo, def.nameEn);
+        const plaqueFace = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.34, 0.46),
+          new THREE.MeshBasicMaterial({ map: plaqueTex, transparent: true })
+        );
+        plaqueFace.position.set(0, 0.63 + h * 0.52, w / 2 + 0.035 + 0.032);
+        sg.add(plaqueFace);
+
+        // [영웅 석고동상 피규어 본체] (순백 무광 석고 조각상 질감, 2.3배 대형 스케일, 고유 영웅 포즈)
+        const figure = makeHero(def.type, true);
+        figure.position.y = pedestalTopY;
+        sg.add(figure);
+
+        stage1Group.add(sg);
+
+        // 충돌체 및 점프 발판 등록
+        stage1Colliders.push({ x: sx, z: sz, r: 1.65 });
+        stage1Boxes.push({
+          minx: sx - (w + 0.8) / 2,
+          maxx: sx + (w + 0.8) / 2,
+          minz: sz - (w + 0.8) / 2,
+          maxz: sz + (w + 0.8) / 2,
+          top: 0.35
+        });
+        stage1Boxes.push({
+          minx: sx - (w + 0.4) / 2,
+          maxx: sx + (w + 0.4) / 2,
+          minz: sz - (w + 0.4) / 2,
+          maxz: sz + (w + 0.4) / 2,
+          top: 0.63
+        });
+        stage1Boxes.push({
+          minx: sx - (w + 0.1) / 2,
+          maxx: sx + (w + 0.1) / 2,
+          minz: sz - (w + 0.1) / 2,
+          maxz: sz + (w + 0.1) / 2,
+          top: pedestalTopY
+        });
+      });
+
+      // 동상 좌우를 우아하게 장식하는 순백 석조 화분 (좌/우 날개)
+      [-spacing * 1.55, spacing * 1.55].forEach(outerOffset => {
+        const ox = cx + tanX * outerOffset;
+        const oz = cz + tanZ * outerOffset;
+        const urnG = new THREE.Group();
+        urnG.position.set(ox, 0, oz);
+        urnG.rotation.y = Math.atan2(-ox, -oz);
+
+        const urnBase = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.7, 0.85, 0.45, 16),
+          stdPalette(0xCBD5E1, 0xE2E8F0, 0x94A3B8, { roughness: 0.85 })
+        );
+        urnBase.position.y = 0.225; urnBase.castShadow = true; urnG.add(urnBase);
+
+        const urnBowl = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.95, 0.6, 0.75, 16),
+          stdPalette(0xF8FAFC, 0xFFFFFF, 0xE2E8F0, { roughness: 0.80 })
+        );
+        urnBowl.position.y = 0.45 + 0.375; urnBowl.castShadow = true; urnG.add(urnBowl);
+
+        // 화분 속 황금빛 & 분홍빛 축제 꽃송이들
+        const fCols = [0xFACC15, 0xEC4899, 0x38BDF8, 0xFFFFFF];
+        for (let i = 0; i < 7; i++) {
+          const fa = (i / 7) * Math.PI * 2;
+          const flower = new THREE.Mesh(
+            new THREE.SphereGeometry(0.15, 8, 8),
+            std(fCols[i % fCols.length])
+          );
+          flower.position.set(Math.cos(fa) * 0.48, 1.25, Math.sin(fa) * 0.48);
+          urnG.add(flower);
+        }
+        const centerBlossom = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 8, 8),
+          std(0xEF4444)
+        );
+        centerBlossom.position.set(0, 1.32, 0); urnG.add(centerBlossom);
+
+        stage1Group.add(urnG);
+        stage1Colliders.push({ x: ox, z: oz, r: 0.95 });
       });
     }
 
@@ -3010,12 +3474,18 @@
         { s1: 0xDC2626, s2: 0xB91C1C, s3: 0x450A0A },
         { s1: 0xEAB308, s2: 0xCA8A04, s3: 0x713F12 }
       ];
+      // 문제풀이 광장 깃발: 진입로 입구(푯말)와 대칭 동상을 기준으로 좌우 대칭을 이루도록 배치
+      const entranceAngle = Math.atan2(-Z.z, -Z.x);
       flagPaletteCols.forEach((c, i) => {
-        const a = i / 8 * Math.PI * 2, x = Z.x + Math.cos(a) * (Z.r - 1.2), z = Z.z + Math.sin(a) * (Z.r - 1.2);
+        const a = entranceAngle + (i + 0.5) * (Math.PI * 2 / 8);
+        const x = Z.x + Math.cos(a) * (Z.r - 1.2), z = Z.z + Math.sin(a) * (Z.r - 1.2);
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, 3, 8), stdPalette(0xDDDDDD, 0xEAEAEA, 0x71717A)); pole.position.set(x, 1.5, z); stage1Group.add(pole);
         const flag = new THREE.Mesh(new THREE.PlaneGeometry(1, .65), stdPalette(c.s1, c.s2, c.s3, { side: THREE.DoubleSide })); flag.position.set(x + .5, 2.65, z); stage1Group.add(flag);
         stage1Colliders.push({ x, z, r: .3 });
       });
+
+      // 문제풀이 광장 캐릭터 동상 (탐험가, 로보트, 마법사): 분수와 깃발 사이, 푯말 반대편에서 중앙광장을 바라보며 배치
+      buildPlazaHeroStatues(Z, stage1Group);
 
       // 점프 놀이터: X자 형태 대칭 단차 발판 (중앙 정점 + 4개 대각선 방향 오르막/내리막 총 13개)
       const xStairs = [
@@ -4075,46 +4545,57 @@
       return sp;
     }
 
-    function makeHero(type) {
+    function makeHero(type, isStatue = false) {
       const g = new THREE.Group(), U = g.userData;
       U.type = type;
-      g.scale.set(1.05, 1.05, 1.05); // 기존 1.5배에서 0.7배로 축소 (1.5 * 0.7 = 1.05배)
+      U.isStatue = isStatue;
+      // 동상 크기 2배 확대 (기존 1.15배 -> 2.30배로 2배 확대 적용)
+      g.scale.set(isStatue ? 2.30 : 1.05, isStatue ? 2.30 : 1.05, isStatue ? 2.30 : 1.05);
       const rig = new THREE.Group(); g.add(rig); U.rig = rig;
 
-      // Base colors (너무 밝게 번지지 않도록 채도와 명암을 차분하고 풍부하게 톤다운)
-      const bodyCol = {
+      // Base colors (석고동상: 미술관 조각상처럼 부드럽고 품격 있는 순백의 알라바스터 석고 질감)
+      const bodyCol = isStatue ? 0xF8FAFC : ({
         explorer: 0x0284C7,  // 너무 밝던 하늘색(0x38BDF8) -> 차분하고 선명한 딥 스카이 블루(0x0284C7)
         cyberbot: 0x64748B,  // 거의 흰색으로 보이던 0xCBD5E1 -> 세련된 슬레이트 티타늄(0x64748B)
         wizard:   0x5B21B6   // 0x7C3AED -> 깊이 있는 미드나잇 바이올렛(0x5B21B6)
-      }[type] || 0x0284C7;
+      }[type] || 0x0284C7);
 
-      const furCol = {
+      const furCol = isStatue ? 0xFFFFFF : ({
         explorer: 0xB45309,  // 쨍하던 주황(0xD98A48) -> 따뜻하고 부드러운 진저 앰버(0xB45309)
         cyberbot: 0x94A3B8,  // 너무 밝던 은색(0xD6DEE8) -> 깔끔하고 차분한 라이트 메탈 그레이(0x94A3B8)
         wizard:   0xD8D4CB   // 하얗게 날아가던 순백(0xFFFFFF) -> 부드러운 오트밀 크림(0xD8D4CB)
-      }[type] || 0xB45309;
+      }[type] || 0xB45309);
+
+      const statueRoughness = 0.88; // 무광 순백 석고의 부드러운 난반사
+      const statueMetalness = 0.0;  // 비금속 석고상 (메탈감 0)
 
       // Body (Shirt / Robot Torso / Robe)
       let body;
       if (type === "wizard") {
-        body = new THREE.Mesh(new THREE.CylinderGeometry(.22, .42, .5, 20), std(bodyCol, { roughness: .65 }));
+        body = new THREE.Mesh(new THREE.CylinderGeometry(.22, .42, .5, 20), std(bodyCol, { roughness: isStatue ? statueRoughness : .65, metalness: isStatue ? 0 : 0 }));
         body.position.y = .36;
       } else if (type === "cyberbot") {
-        body = new THREE.Mesh(new THREE.CylinderGeometry(.26, .3, .44, 18), std(bodyCol, { roughness: .4, metalness: .3 }));
+        body = new THREE.Mesh(new THREE.CylinderGeometry(.26, .3, .44, 18), std(bodyCol, { roughness: isStatue ? statueRoughness : .4, metalness: isStatue ? 0 : .3 }));
         body.position.y = .38;
-        // Chest green light
-        const light = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), new THREE.MeshStandardMaterial({
-          color: lin(0x16A34A), emissive: lin(0x16A34A), emissiveIntensity: .6
-        }));
+        // Chest light (석고동상일 때는 부드러운 양각 조각 메달리온)
+        const lightMat = isStatue ?
+          std(0xF8FAFC, { roughness: statueRoughness, metalness: 0 }) :
+          new THREE.MeshStandardMaterial({ color: lin(0x16A34A), emissive: lin(0x16A34A), emissiveIntensity: .6 });
+        const light = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), lightMat);
         light.position.set(0, .42, .27);
         rig.add(light);
       } else { // explorer (고양이)
-        body = new THREE.Mesh(new THREE.CylinderGeometry(.24, .3, .46, 20), std(bodyCol, { roughness: .6 }));
+        body = new THREE.Mesh(new THREE.CylinderGeometry(.24, .3, .46, 20), std(bodyCol, { roughness: isStatue ? statueRoughness : .6, metalness: isStatue ? 0 : 0 }));
         body.position.y = .38;
-        // Neckerchief collar & knot
-        const scarf = new THREE.Mesh(new THREE.CylinderGeometry(.28, .27, .09, 20), std(0x78350F, { roughness: .7 }));
+        // Neckerchief collar & knot (석고동상일 때는 음영 잡힌 우아한 석고 옷자락)
+        const scarfCol = isStatue ? 0xE2E8F0 : 0x78350F;
+        const scarfMat = std(scarfCol, { roughness: isStatue ? .90 : .7, metalness: 0 });
+        const scarf = new THREE.Mesh(new THREE.CylinderGeometry(.28, .27, .09, 20), scarfMat);
         scarf.position.y = .57; rig.add(scarf);
-        const knot = new THREE.Mesh(new THREE.ConeGeometry(.06, .14, 8), std(0x78350F, { roughness: .7 }));
+        const knotMat = isStatue ?
+          std(0xF8FAFC, { roughness: statueRoughness, metalness: 0 }) :
+          std(0x78350F, { roughness: .7 });
+        const knot = new THREE.Mesh(new THREE.ConeGeometry(.06, .14, 8), knotMat);
         knot.rotation.x = Math.PI; knot.position.set(0, .49, .28); rig.add(knot);
       }
       rig.add(body); U.body = body;
@@ -4124,8 +4605,8 @@
         // Cat tail: 부드러운 곡선(TubeGeometry)으로 매끄럽게 위로 감아올라가는 꼬리
         const tailGroup = new THREE.Group();
         tailGroup.position.set(0, .26, -.21);
-
-        const baseJoint = new THREE.Mesh(new THREE.SphereGeometry(.052, 10, 8), std(furCol, { roughness: .7 }));
+        const tailMat = std(furCol, { roughness: isStatue ? statueRoughness : .7, metalness: 0 });
+        const baseJoint = new THREE.Mesh(new THREE.SphereGeometry(.052, 10, 8), tailMat);
         tailGroup.add(baseJoint);
 
         const curvePoints = [
@@ -4137,10 +4618,10 @@
         ];
         const catCurve = new THREE.CatmullRomCurve3(curvePoints);
         const tubeGeo = new THREE.TubeGeometry(catCurve, 20, .046, 10, false);
-        const tubeMesh = new THREE.Mesh(tubeGeo, std(furCol, { roughness: .7 }));
+        const tubeMesh = new THREE.Mesh(tubeGeo, tailMat);
         tailGroup.add(tubeMesh);
 
-        const tip = new THREE.Mesh(new THREE.SphereGeometry(.046, 10, 8), std(furCol, { roughness: .7 }));
+        const tip = new THREE.Mesh(new THREE.SphereGeometry(.046, 10, 8), tailMat);
         tip.position.copy(curvePoints[4]);
         tailGroup.add(tip);
 
@@ -4150,8 +4631,8 @@
         // Puppy tail: 본체에 부드럽게 이어진 곡선 꼬리
         const tailGroup = new THREE.Group();
         tailGroup.position.set(0, .28, -.23);
-
-        const baseJoint = new THREE.Mesh(new THREE.SphereGeometry(.055, 10, 8), std(0x475569, { roughness: .5, metalness: .3 }));
+        const tailMat = std(isStatue ? 0xF8FAFC : 0x475569, { roughness: isStatue ? statueRoughness : .5, metalness: isStatue ? 0 : .3 });
+        const baseJoint = new THREE.Mesh(new THREE.SphereGeometry(.055, 10, 8), tailMat);
         tailGroup.add(baseJoint);
 
         const curvePoints = [
@@ -4163,10 +4644,10 @@
         ];
         const dogCurve = new THREE.CatmullRomCurve3(curvePoints);
         const tubeGeo = new THREE.TubeGeometry(dogCurve, 16, .05, 10, false);
-        const tubeMesh = new THREE.Mesh(tubeGeo, std(0x475569, { roughness: .5, metalness: .3 }));
+        const tubeMesh = new THREE.Mesh(tubeGeo, tailMat);
         tailGroup.add(tubeMesh);
 
-        const tTip = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), std(0x475569, { roughness: .5, metalness: .3 }));
+        const tTip = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), tailMat);
         tTip.position.copy(curvePoints[4]);
         tailGroup.add(tTip);
 
@@ -4174,7 +4655,8 @@
         U.tail = tailGroup;
       } else { // wizard (토끼)
         // Fluffy bunny cotton-ball tail
-        const tail = new THREE.Mesh(new THREE.SphereGeometry(.12, 14, 12), std(0xD8D4CB, { roughness: .85 }));
+        const tailMat = std(furCol, { roughness: isStatue ? statueRoughness : .85, metalness: 0 });
+        const tail = new THREE.Mesh(new THREE.SphereGeometry(.12, 14, 12), tailMat);
         tail.position.set(-.06, .22, -.26);
         tail.scale.set(1.1, 1, 1.1);
         rig.add(tail);
@@ -4182,9 +4664,9 @@
       }
 
       // Feet / Paws
-      const footCol = type === "cyberbot" ? 0x475569 : (type === "wizard" ? 0xD8D4CB : 0xB45309);
+      const footCol = isStatue ? 0xF1F5F9 : (type === "cyberbot" ? 0x475569 : (type === "wizard" ? 0xD8D4CB : 0xB45309));
       U.feet = [-1, 1].map(s => {
-        const f = new THREE.Mesh(new THREE.SphereGeometry(.1, 10, 8), std(footCol, { roughness: .6 }));
+        const f = new THREE.Mesh(new THREE.SphereGeometry(.1, 10, 8), std(footCol, { roughness: isStatue ? statueRoughness : .6, metalness: 0 }));
         f.position.set(.13 * s, .07, .04);
         f.scale.set(1, .7, 1.3);
         rig.add(f);
@@ -4192,9 +4674,9 @@
       });
 
       // Arms / Paws (어깨가 몸통에 자연스럽게 매립되는 볼관절 + 어깨 캡 구조로 팔 회전 시 허공 분리 방지)
-      const handCol = type === "cyberbot" ? 0x475569 : furCol;
+      const handCol = isStatue ? 0xFFFFFF : (type === "cyberbot" ? 0x475569 : furCol);
       U.arms = [-1, 1].map(s => {
-        const armMat = std(bodyCol, { roughness: .6, metalness: type === "cyberbot" ? .25 : 0 });
+        const armMat = std(bodyCol, { roughness: isStatue ? statueRoughness : .6, metalness: isStatue ? 0 : (type === "cyberbot" ? .25 : 0) });
 
         // 몸통 측면 어깨 소켓 (몸통과 팔 사이의 틈새를 매끄럽게 채워주는 관절 받침대)
         const shoulderCap = new THREE.Mesh(new THREE.SphereGeometry(.088, 12, 10), armMat);
@@ -4215,7 +4697,7 @@
         arm.castShadow = true;
         pivot.add(arm);
 
-        const hand = new THREE.Mesh(new THREE.SphereGeometry(.085, 12, 10), std(handCol, { roughness: .6 }));
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(.085, 12, 10), std(handCol, { roughness: isStatue ? statueRoughness : .6, metalness: 0 }));
         hand.position.y = -.30;
         hand.castShadow = true;
         pivot.add(hand);
@@ -4234,10 +4716,10 @@
       // Base Head Mesh
       let head;
       if (type === "cyberbot") {
-        head = new THREE.Mesh(new THREE.SphereGeometry(.41, 28, 22), std(furCol, { roughness: .4, metalness: .25 }));
+        head = new THREE.Mesh(new THREE.SphereGeometry(.41, 28, 22), std(furCol, { roughness: isStatue ? statueRoughness : .4, metalness: isStatue ? 0 : .25 }));
         head.scale.set(1.08, 0.96, 1.0);
       } else {
-        head = new THREE.Mesh(new THREE.SphereGeometry(.41, 28, 22), std(furCol, { roughness: .7 }));
+        head = new THREE.Mesh(new THREE.SphereGeometry(.41, 28, 22), std(furCol, { roughness: isStatue ? statueRoughness : .7, metalness: 0 }));
       }
       headG.add(head);
 
@@ -4249,9 +4731,10 @@
           earG.position.set(.24 * s, .35, 0);
           earG.rotation.z = -.35 * s;
           earG.rotation.x = -.1;
-          const outer = new THREE.Mesh(new THREE.ConeGeometry(.13, .26, 4), std(furCol, { roughness: .7 }));
+          const outer = new THREE.Mesh(new THREE.ConeGeometry(.13, .26, 4), std(furCol, { roughness: isStatue ? statueRoughness : .7, metalness: 0 }));
           outer.rotation.y = Math.PI / 4;
-          const inner = new THREE.Mesh(new THREE.ConeGeometry(.09, .2, 4), std(0xEF7272, { roughness: .7 }));
+          const innerCol = isStatue ? 0xE2E8F0 : 0xEF7272;
+          const inner = new THREE.Mesh(new THREE.ConeGeometry(.09, .2, 4), std(innerCol, { roughness: isStatue ? .90 : .7, metalness: 0 }));
           inner.rotation.y = Math.PI / 4;
           inner.position.set(0, -.02, .03);
           earG.add(outer, inner);
@@ -4259,23 +4742,28 @@
         });
 
         // SAFARI HAT
-        const brim = new THREE.Mesh(new THREE.CylinderGeometry(.52, .52, .04, 24), std(0x9A601B, { roughness: .7 }));
+        const brimMat = std(isStatue ? 0xF8FAFC : 0x9A601B, { roughness: isStatue ? statueRoughness : .7, metalness: 0 });
+        const brim = new THREE.Mesh(new THREE.CylinderGeometry(.52, .52, .04, 24), brimMat);
         brim.position.set(0, .32, -.04); brim.rotation.x = .06; headG.add(brim);
-        const cap = new THREE.Mesh(new THREE.CylinderGeometry(.32, .38, .22, 24), std(0xB45309, { roughness: .7 }));
+        const capMat = std(isStatue ? 0xFFFFFF : 0xB45309, { roughness: isStatue ? statueRoughness : .7, metalness: 0 });
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(.32, .38, .22, 24), capMat);
         cap.position.set(0, .44, -.04); headG.add(cap);
-        const band = new THREE.Mesh(new THREE.CylinderGeometry(.385, .385, .06, 24), std(0x582B09, { roughness: .7 }));
+        const bandMat = std(isStatue ? 0xE2E8F0 : 0x582B09, { roughness: isStatue ? .90 : .7, metalness: 0 });
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(.385, .385, .06, 24), bandMat);
         band.position.set(0, .37, -.04); headG.add(band);
-        // Yellow badge on front
-        const badge = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .03, 16), new THREE.MeshStandardMaterial({
-          color: lin(0xFBBF24), emissive: lin(0xD97706), emissiveIntensity: .3, roughness: .4
-        }));
+        // Hat badge (석고 양각 조각)
+        const badgeMat = isStatue ?
+          std(0xF8FAFC, { roughness: statueRoughness, metalness: 0 }) :
+          new THREE.MeshStandardMaterial({ color: lin(0xFBBF24), emissive: lin(0xD97706), emissiveIntensity: .3, roughness: .4 });
+        const badge = new THREE.Mesh(new THREE.CylinderGeometry(.07, .07, .03, 16), badgeMat);
         badge.rotation.x = Math.PI / 2; badge.position.set(0, .39, .36); headG.add(badge);
 
-        // Cream Muzzle Snout patch
-        const muzzle = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 10), std(0xE6CDB4, { roughness: .7 }));
+        // Muzzle Snout patch
+        const muzzleCol = isStatue ? 0xFFFFFF : 0xE6CDB4;
+        const muzzle = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 10), std(muzzleCol, { roughness: isStatue ? statueRoughness : .7, metalness: 0 }));
         muzzle.position.set(0, -.07, .36); muzzle.scale.set(1.3, .8, .7); headG.add(muzzle);
-        // Cat Nose
-        const nose = new THREE.Mesh(new THREE.ConeGeometry(.035, .04, 3), std(0x78350F));
+        // Cat Nose (석고 조각의 세밀한 음영)
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(.035, .04, 3), std(isStatue ? 0x64748B : 0x78350F, { roughness: isStatue ? .85 : .85, metalness: 0 }));
         nose.rotation.z = Math.PI; nose.position.set(0, -.03, .44); headG.add(nose);
 
       } else if (type === "cyberbot") {
@@ -4283,33 +4771,36 @@
         [-1, 1].forEach(s => {
           const earG = new THREE.Group();
           earG.position.set(.36 * s, .14, .04);
-          const ear = new THREE.Mesh(new THREE.CylinderGeometry(.06, .08, .32, 12), std(0x475569, { roughness: .5, metalness: .2 }));
+          const earMat = std(isStatue ? 0xF1F5F9 : 0x475569, { roughness: isStatue ? statueRoughness : .5, metalness: 0 });
+          const ear = new THREE.Mesh(new THREE.CylinderGeometry(.06, .08, .32, 12), earMat);
           ear.position.set(.02 * s, -.12, 0);
           ear.rotation.z = .15 * s;
           ear.rotation.y = -.1 * s;
           earG.add(ear);
-          const earTip = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), std(0x475569, { roughness: .5, metalness: .2 }));
+          const earTip = new THREE.Mesh(new THREE.SphereGeometry(.08, 10, 8), earMat);
           earTip.position.set(.02 * s, -.28, 0);
           earG.add(earTip);
           headG.add(earG);
         });
 
         // ANTENNA on top
-        const ant = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .22, 8), std(0x64748B, { roughness: .4, metalness: .4 }));
+        const ant = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .22, 8), std(isStatue ? 0xE2E8F0 : 0x64748B, { roughness: isStatue ? .90 : .4, metalness: 0 }));
         ant.position.y = .38; headG.add(ant);
-        const tip = new THREE.Mesh(new THREE.SphereGeometry(.085, 14, 10), new THREE.MeshStandardMaterial({
-          color: lin(0xDC2626), emissive: lin(0xDC2626), emissiveIntensity: .5
-        }));
+        const tipMat = isStatue ?
+          std(0xFFFFFF, { roughness: statueRoughness, metalness: 0 }) :
+          new THREE.MeshStandardMaterial({ color: lin(0xDC2626), emissive: lin(0xDC2626), emissiveIntensity: .5 });
+        const tip = new THREE.Mesh(new THREE.SphereGeometry(.085, 14, 10), tipMat);
         tip.position.y = .52; headG.add(tip); U.tip = tip;
 
-        // VISOR (부드럽게 얼굴을 감싸는 곡선 바이저)
-        const visor = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .18, 20, 1, false, Math.PI * 0.28, Math.PI * 0.44), std(0x1E293B, { roughness: .4 }));
+        // VISOR (조각된 석고 바이저 패널)
+        const visorMat = std(isStatue ? 0xE2E8F0 : 0x1E293B, { roughness: isStatue ? .90 : .4, metalness: 0 });
+        const visor = new THREE.Mesh(new THREE.CylinderGeometry(.42, .42, .18, 20, 1, false, Math.PI * 0.28, Math.PI * 0.44), visorMat);
         visor.rotation.y = -Math.PI / 2; visor.position.set(0, .05, .05); headG.add(visor);
 
-        // Muzzle Patch & Nose (부드러운 타원 구형)
-        const muzzle = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 10), std(0xCBD5E1, { roughness: .6 }));
+        // Muzzle Patch & Nose
+        const muzzle = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 10), std(isStatue ? 0xFFFFFF : 0xCBD5E1, { roughness: isStatue ? statueRoughness : .6, metalness: 0 }));
         muzzle.position.set(0, -.13, .33); muzzle.scale.set(1.3, .75, .7); headG.add(muzzle);
-        const nose = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 8), std(0x1E293B));
+        const nose = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 8), std(isStatue ? 0x64748B : 0x1E293B, { roughness: isStatue ? .85 : .85, metalness: 0 }));
         nose.position.set(0, -.09, .38); headG.add(nose);
 
       } else { // wizard (토끼)
@@ -4319,47 +4810,53 @@
           earG.position.set(.17 * s, .36, -.08);
           earG.rotation.z = -.16 * s;
           earG.rotation.x = -.12;
-          const outer = new THREE.Mesh(new THREE.SphereGeometry(.1, 14, 12), std(0xD8D4CB, { roughness: .75 }));
+          const outer = new THREE.Mesh(new THREE.SphereGeometry(.1, 14, 12), std(furCol, { roughness: isStatue ? statueRoughness : .75, metalness: 0 }));
           outer.scale.set(.8, 3.2, .45); outer.position.y = .22;
-          const inner = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), std(0xF472B6, { roughness: .7 }));
+          const innerCol = isStatue ? 0xE2E8F0 : 0xF472B6;
+          const inner = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), std(innerCol, { roughness: isStatue ? .90 : .7, metalness: 0 }));
           inner.scale.set(.7, 2.7, .35); inner.position.set(0, .2, .03);
           earG.add(outer, inner);
           headG.add(earG);
         });
 
         // WIZARD CONE HAT with Star
-        const brim = new THREE.Mesh(new THREE.CylinderGeometry(.44, .44, .04, 24), std(0x4C1D95, { roughness: .6 }));
+        const brimMat = std(isStatue ? 0xF8FAFC : 0x4C1D95, { roughness: isStatue ? statueRoughness : .6, metalness: 0 });
+        const brim = new THREE.Mesh(new THREE.CylinderGeometry(.44, .44, .04, 24), brimMat);
         brim.position.set(0, .34, 0); brim.rotation.x = -.1; headG.add(brim);
-        const cone = new THREE.Mesh(new THREE.ConeGeometry(.36, .64, 20), std(0x5B21B6, { roughness: .6 }));
+        const coneMat = std(isStatue ? 0xFFFFFF : 0x5B21B6, { roughness: isStatue ? statueRoughness : .6, metalness: 0 });
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(.36, .64, 20), coneMat);
         cone.position.set(0, .64, -.04); cone.rotation.x = -.16; headG.add(cone);
         // Star on hat
-        const star = new THREE.Mesh(new THREE.OctahedronGeometry(.075, 0), new THREE.MeshStandardMaterial({
-          color: lin(0xF59E0B), emissive: lin(0xF59E0B), emissiveIntensity: .5
-        }));
+        const starMat = isStatue ?
+          std(0xFFFFFF, { roughness: statueRoughness, metalness: 0 }) :
+          new THREE.MeshStandardMaterial({ color: lin(0xF59E0B), emissive: lin(0xF59E0B), emissiveIntensity: .5 });
+        const star = new THREE.Mesh(new THREE.OctahedronGeometry(.075, 0), starMat);
         star.position.set(0, .54, .2); headG.add(star);
 
-        // Rabbit Nose
-        const nose = new THREE.Mesh(new THREE.ConeGeometry(.03, .04, 3), std(0xDB2777));
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(.03, .04, 3), std(isStatue ? 0x64748B : 0xDB2777, { roughness: isStatue ? .85 : .85, metalness: 0 }));
         nose.rotation.z = Math.PI; nose.position.set(0, -.06, .41); headG.add(nose);
 
         // Magic Wand in hand
         const wand = new THREE.Group();
-        const stick = new THREE.Mesh(new THREE.CylinderGeometry(.02, .025, .44, 6), std(0x78350F));
+        const stick = new THREE.Mesh(new THREE.CylinderGeometry(.02, .025, .44, 6), std(isStatue ? 0xE2E8F0 : 0x78350F, { roughness: isStatue ? .90 : .85, metalness: 0 }));
         stick.position.y = -.35; wand.add(stick);
-        const orb = new THREE.Mesh(new THREE.SphereGeometry(.075, 14, 12), new THREE.MeshStandardMaterial({
-          color: lin(0xDB2777), emissive: lin(0xDB2777), emissiveIntensity: .6
-        }));
+        const orbMat = isStatue ?
+          std(0xFFFFFF, { roughness: statueRoughness, metalness: 0 }) :
+          new THREE.MeshStandardMaterial({ color: lin(0xDB2777), emissive: lin(0xDB2777), emissiveIntensity: .6 });
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(.075, 14, 12), orbMat);
         orb.position.y = -.57; wand.add(orb);
         U.arms[1].add(wand);
       }
 
-      // EYES & CHEEKS
-      const eyeMat = new THREE.MeshStandardMaterial({
-        color: lin(type === "cyberbot" ? 0x00F0FF : 0x1E293B),
-        emissive: lin(type === "cyberbot" ? 0x00F0FF : 0x000000),
-        emissiveIntensity: type === "cyberbot" ? .9 : 0,
-        roughness: .3
-      });
+      // EYES & CHEEKS (석고 조각상: 음각 눈동자 조각 기법으로 뚜렷하고 기품 있는 클래식 시선)
+      const eyeMat = isStatue ?
+        std(0x64748B, { roughness: .85, metalness: 0 }) :
+        new THREE.MeshStandardMaterial({
+          color: lin(type === "cyberbot" ? 0x00F0FF : 0x1E293B),
+          emissive: lin(type === "cyberbot" ? 0x00F0FF : 0x000000),
+          emissiveIntensity: type === "cyberbot" ? .9 : 0,
+          roughness: .3
+        });
 
       U.eyes = [-1, 1].map(s => {
         const e = new THREE.Mesh(new THREE.SphereGeometry(type === "cyberbot" ? .06 : .065, 14, 12), eyeMat);
@@ -4370,21 +4867,30 @@
         headG.add(e);
 
         if (type !== "cyberbot") {
-          const sh = new THREE.Mesh(new THREE.SphereGeometry(.022, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-          sh.position.set(.025, .03, .06);
-          e.add(sh);
+          if (!isStatue) {
+            const sh = new THREE.Mesh(new THREE.SphereGeometry(.022, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+            sh.position.set(.025, .03, .06);
+            e.add(sh);
 
-          const cheekCol = type === "wizard" ? 0xF472B6 : 0xF87171;
-          const c = new THREE.Mesh(new THREE.SphereGeometry(.06, 10, 8), std(cheekCol, { roughness: .8 }));
-          c.position.set(.24 * s, -.07, .33);
-          c.scale.set(1, .6, .4);
-          headG.add(c);
+            const cheekCol = type === "wizard" ? 0xF472B6 : 0xF87171;
+            const c = new THREE.Mesh(new THREE.SphereGeometry(.06, 10, 8), std(cheekCol, { roughness: .8 }));
+            c.position.set(.24 * s, -.07, .33);
+            c.scale.set(1, .6, .4);
+            headG.add(c);
+          } else {
+            // 석고 조각 볼륨 양각 볼살
+            const c = new THREE.Mesh(new THREE.SphereGeometry(.055, 10, 8), std(0xF1F5F9, { roughness: .90, metalness: 0 }));
+            c.position.set(.24 * s, -.07, .33);
+            c.scale.set(1, .6, .4);
+            headG.add(c);
+          }
         }
         return e;
       });
 
-      // MOUTH
-      const mouthMat = std(type === "cyberbot" ? 0x1E293B : (type === "explorer" ? 0x78350F : 0x475569));
+      // MOUTH (조각된 입술 라인)
+      const mouthCol = isStatue ? 0x64748B : (type === "cyberbot" ? 0x1E293B : (type === "explorer" ? 0x78350F : 0x475569));
+      const mouthMat = std(mouthCol, { roughness: isStatue ? .85 : .85, metalness: 0 });
       const mouthY = type === "cyberbot" ? -.16 : -.11;
       const mouthZ = type === "cyberbot" ? .35 : .4;
       const smile = new THREE.Mesh(new THREE.TorusGeometry(.055, .016, 6, 14, Math.PI), mouthMat);
@@ -4396,12 +4902,29 @@
       [smile, frown, oh].forEach(m => headG.add(m));
       U.mouths = { smile, frown, oh };
 
-      g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+      g.traverse(o => { if (o.isMesh) { o.castShadow = true; if (isStatue) o.receiveShadow = true; } });
       setFace(g, "smile");
       U.emote = null; U.squash = 0;
-      const nameSp = makeNameSprite(getHeroFullName(type), type);
-      g.add(nameSp);
-      U.nameSprite = nameSp;
+      if (!isStatue) {
+        const nameSp = makeNameSprite(getHeroFullName(type), type);
+        g.add(nameSp);
+        U.nameSprite = nameSp;
+      } else {
+        // 동상 전용 당당한 기념비 포즈 (Statue Monument Heroic Pose)
+        if (type === "explorer") {
+          U.arms[1].rotation.set(-1.25, 0.1, 0.45); // 오른손을 높이 들어 중앙광장을 향해 환영하는 손인사
+          U.arms[0].rotation.set(0.28, 0, -0.42);  // 왼손은 허리에 당당하게 얹음
+          U.head.rotation.set(-0.08, 0.04, 0);    // 살짝 위를 바라보며 밝은 미소
+        } else if (type === "cyberbot") {
+          U.arms[0].rotation.set(-1.35, -0.1, -0.35); // 왼손으로 친근하고 씩씩한 로봇 경례 포즈
+          U.arms[1].rotation.set(0.18, 0, 0.28);
+          U.head.rotation.set(-0.04, 0, 0.08);        // 살짝 갸우뚱하며 사랑스러운 로봇 표정
+        } else if (type === "wizard") {
+          U.arms[1].rotation.set(-1.75, 0.1, 0.48); // 마법 지팡이를 하늘 높이 치켜든 웅장한 아치메이지 포즈
+          U.arms[0].rotation.set(0.38, 0, -0.38);
+          U.head.rotation.set(-0.12, -0.06, 0);
+        }
+      }
       return g;
     }
 
@@ -4937,7 +5460,7 @@
       G.stage = stageNum;
       G.stageGot = 0;
       setStageVisuals(stageNum);
-      // ?ㅽ뀒?댁?媛 蹂???뚮쭏??罹먮┃?곌? 以묒븰 愿묒옣?먯꽌 ?뺣㈃??蹂대ŉ ?쒖옉
+      // 스테이지가 변경될 때마다 캐릭터가 중앙 광장에서 정면을 보며 시작
       P.pos.set(0, 0, 3.2);
       P.vy = 0;
       P.face = Math.PI;
@@ -5245,13 +5768,13 @@
       const q = card.q = makeQuestion(card);
       const diffCfg = DIFF_CONFIG[card.diff] || DIFF_CONFIG.mid;
 
-      // 臾몄젣移대뱶 醫뚯륫 ?곷떒 諛곗? (?⑷툑臾몄젣移대뱶 vs ?쇰컲臾몄젣移대뱶 ?쒖떆)
+      // 문제카드 좌측 상단 배지 (황금문제카드 vs 일반문제카드 표시)
       const typeBadge = $("quizCardTypeBadge");
       if (typeBadge) {
         if (card.gold) {
-          typeBadge.innerHTML = `<span class="badge-gold">???⑷툑 臾몄젣 (?먯닔 2諛?)</span>`;
+          typeBadge.innerHTML = `<span class="badge-gold">👑 황금 문제 (점수 2배)</span>`;
         } else {
-          typeBadge.innerHTML = `<span class="badge-normal">?쇰컲 臾몄젣</span>`;
+          typeBadge.innerHTML = `<span class="badge-normal">일반 문제</span>`;
         }
       }
 
@@ -5274,21 +5797,21 @@
       if (qb) qb.classList.remove("hidden");
       $("quizHintBtn").disabled = false; $("quizHintBtn").style.opacity = 1;
       $("quizSay").innerHTML = ART.speaker;
-      $("quizSay").onclick = () => say($("quizPrompt").innerText + ". " + [...box.children].map((b, i) => `${i + 1}踰? ${b.dataset.say}`).join(". "));
+      $("quizSay").onclick = () => say($("quizPrompt").innerText + ". " + [...box.children].map((b, i) => `${i + 1}번. ${b.dataset.say}`).join(". "));
       show("quizModal");
       sfx("tap");
     }
     function showHint(free) {
       if (!G.activeCard) return;
       if (!free) G.hintUsed = true;
-      $("quizHintBox").innerHTML = `?뮕 ?뺣떟 泥レ냼由?<b>${esc(G.activeCard.q.hint)}</b>`;
+      $("quizHintBox").innerHTML = `💡 정답 첫소리: <b>${esc(G.activeCard.q.hint)}</b>`;
       $("quizHintBox").classList.remove("hidden");
       $("quizHintBtn").disabled = true; $("quizHintBtn").style.opacity = .4;
     }
     function closeQuiz(later) {
       hide("quizModal");
       G.activeCard = null; G.paused = false;
-      if (later) notice("以鍮꾨릺硫??ㅼ떆 移대뱶濡?媛??");
+      if (later) notice("준비되면 다시 카드로 가요");
     }
     function answer(ok, btn) {
       if (G.locked) return;
@@ -5298,7 +5821,7 @@
         G.locked = true; sfx("right");
         btn.classList.add("opt-right");
         $("quizOptions").querySelectorAll("button").forEach(b => b.disabled = true);
-        // ?뺣떟 ??遺덊븘?뷀븳 ?섎떒 踰꾪듉???④꺼 移대뱶 ?믪씠 蹂??諛??ㅽ겕濡ㅻ컮 ?앹꽦 諛⑹?
+        // 정답 시 불필요한 하단 버튼을 숨겨 카드 높이 변동 및 스크롤바 생성 방지
         const qb = document.querySelector(".quiz-bottom");
         if (qb) qb.classList.add("hidden");
         $("quizHintBox").classList.add("hidden");
@@ -5315,7 +5838,9 @@
         if (!first || G.hintUsed) G.missed.add(card.word.word);
         G.learned.push({ word: card.word.word, zone: card.zone, diff: card.diff, mean: card.q.mean });
         fb.style.color = isGold ? "#D97706" : "var(--leaf-d)";
-        fb.innerHTML = `?⑸룞?? ${isGold ? "<b style=\"color:#F59E0B\">?⑦솴湲?蹂대꼫??2諛?</b> " : ""}+${pts}${comboMult > 1 ? ` <span class=\"star-on\">횞${comboMult}</span>` : ""}<span class=\"mean\">${esc(card.word.word)} : ${esc(card.q.mean)}</span>`;
+        const goldTxt = isGold ? '<b style="color:#F59E0B">👑 황금 보너스 2배!</b> ' : '';
+        const starTxt = comboMult > 1 ? ` <span class="star-on">×${comboMult}</span>` : '';
+        fb.innerHTML = `딩동댕! ${goldTxt}+${pts}${starTxt}<span class="mean">${esc(card.word.word)} : ${esc(card.q.mean)}</span>`;
         updateHud(true);
         setTimeout(() => { collect(card); closeQuiz(false); }, 1300);
       } else {
@@ -5324,11 +5849,11 @@
         fb.style.color = "var(--tomato-d)";
         if (G.attempts >= 2) {
           G.locked = true;
-          fb.textContent = "?? 移대뱶媛 ?꾨쭩媛붿뼱?? ?ㅼ떆 李얠븘遊먯슂";
+          fb.textContent = "앗! 카드가 도망갔어요! 다시 찾아봐요";
           G.missed.add(card.word.word);
-          setTimeout(() => { card.mesh.position.copy(freeSpot(card.zone)); closeQuiz(false); emote("sad"); notice(`${ZONES[card.zone].name}?먯꽌 ?ㅼ떆 李얠븘??`); }, 1300);
+          setTimeout(() => { card.mesh.position.copy(freeSpot(card.zone)); closeQuiz(false); emote("sad"); notice(`${ZONES[card.zone].name}에서 다시 찾아요!`); }, 1300);
         } else {
-          fb.textContent = "?ㅼ떆 怨⑤씪 蹂쇨퉴?";
+          fb.textContent = "다시 골라 볼까요?";
           showHint(true);
         }
         updateHud();
@@ -5983,7 +6508,9 @@
 
     function refreshZoneSigns() {
       zoneSignBoards.forEach(({ frontBoard, backBoard, board, z }) => {
-        const tex = textTexture(z.name, z.color, "#fff");
+        const signBg = (z === ZONES.center || z.name === "중앙 광장") ? "#FFFFFF" : z.color;
+        const signFg = (z === ZONES.center || z.name === "중앙 광장") ? "#64748B" : "#fff";
+        const tex = textTexture(z.name, signBg, signFg);
         if (frontBoard && frontBoard.material) {
           frontBoard.material.map = tex;
           frontBoard.material.needsUpdate = true;
