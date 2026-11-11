@@ -1,0 +1,25 @@
+{
+  "name": "studywords",
+  "version": "1.0.0",
+  "description": "Three.js 기반의 웹 3D 교육용 학습 게임입니다. 귀여운 동물 영웅(탐험가 고양이, 로보트 강아지, 마법사 토끼)과 함께 아름다운 3차원 섬을 탐험하며 스테이지별 어휘 퀴즈를 풀고 단어를 수집해보세요!",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site - no build needed'",
+    "test": "echo \"No tests specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rami0070/StudyGame.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Rami0070/StudyGame/issues"
+  },
+  "homepage": "https://github.com/Rami0070/StudyGame#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}
