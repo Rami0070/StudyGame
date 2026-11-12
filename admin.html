@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>선생님 관리자 대시보드 | 3D 학습 게임</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+    
+    :root {
+      --primary: #3B82F6;
+      --primary-dark: #1D4ED8;
+      --bg: #F1F5F9;
+      --card-bg: #FFFFFF;
+      --text-main: #1E293B;
+      --text-sub: #64748B;
+      --border: #E2E8F0;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --font-title: 'Jua', sans-serif;
+      --font-body: 'Noto Sans KR', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 상단 헤더 */
+    header {
+      background: #FFFFFF;
+      border-bottom: 1px solid var(--border);
+      padding: 16px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #3B82F6, #2563EB);
+      color: white;
+      font-size: 24px;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+    }
+    .logo-title h1 {
+      font-family: var(--font-title);
+      font-size: 24px;
+      color: #0F172A;
+      letter-spacing: -0.5px;
+    }
+    .logo-title p {
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* 버튼 스타일 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-outline { background: white; border-color: var(--border); color: var(--text-main); }
+    .btn-outline:hover { background: #F8FAFC; border-color: #CBD5E1; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+    /* 본문 컨테이너 */
+    main {
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+      flex: 1;
+    }
+
+    /* 통계 요약 카드 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .stat-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .stat-blue { background: #EFF6FF; color: #2563EB; }
+    .stat-green { background: #ECFDF5; color: #059669; }
+    .stat-amber { background: #FFFBEB; color: #D97706; }
+    .stat-purple { background: #F5F3FF; color: #7C3AED; }
+    .stat-info p {
+      font-size: 13px;
+      color: var(--text-sub);
+      font-weight: 500;
+    }
+    .stat-info h3 {
+      font-size: 26px;
+      font-weight: 900;
+      color: #0F172A;
+      margin-top: 2px;
+    }
+
+    /* 필터 및 검색 바 */
+    .filter-panel {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .filter-select, .filter-input {
+      font-family: inherit;
+      font-size: 14px;
+      padding: 9px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text-main);
+      outline: none;
+    }
+    .filter-select:focus, .filter-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .view-tabs {
+      display: flex;
+      background: #F1F5F9;
+      padding: 4px;
+      border-radius: 12px;
+      gap: 4px;
+    }
+    .view-tab {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .view-tab.active {
+      background: white;
+      color: #0F172A;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    /* 테이블 영역 */
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+      min-width: 800px;
+    }
+    thead {
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+    td {
+      padding: 16px 18px;
+      border-bottom: 1px solid #F1F5F9;
+      vertical-align: middle;
+    }
+    tbody tr:hover {
+      background: #F8FAFC;
+    }
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge-game1 { background: #E0F2FE; color: #0284C7; }
+    .badge-game2 { background: #FEF3C7; color: #D97706; }
+    .badge-score {
+      font-weight: 900;
+      font-size: 15px;
+      color: #2563EB;
+    }
+
+    /* 빈 데이터 상태 */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-sub);
+    }
+    .empty-state-icon {
+      font-size: 54px;
+      margin-bottom: 12px;
+    }
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    /* 인증 모달 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-box {
+      background: white;
+      border-radius: 24px;
+      padding: 32px;
+      width: min(440px, 100%);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: #EFF6FF;
+      color: #2563EB;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .modal-box h2 {
+      font-family: var(--font-title);
+      font-size: 24px;
+      color: #0F172A;
+      margin-bottom: 8px;
+    }
+    .modal-box p {
+      font-size: 14px;
+      color: var(--text-sub);
+      margin-bottom: 24px;
+    }
+    .modal-input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      font-size: 16px;
+      text-align: center;
+      letter-spacing: 4px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .modal-input:focus {
+      border-color: var(--primary);
+    }
+    .modal-error {
+      color: var(--danger);
+      font-size: 13px;
+      margin-bottom: 12px;
+      min-height: 20px;
+    }
+
+    /* 상세 내역 팝업 */
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 14px;
+    }
+    .detail-item:last-child { border-bottom: none; }
+    .detail-label { color: var(--text-sub); }
+    .detail-value { font-weight: 700; color: #0F172A; }
+  </style>
+</head>
+<body>
+
+  <!-- 인증 팝업 (선생님 비밀번호) -->
+  <div id="authModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-icon">🔐</div>
+      <h2>선생님 관리자 인증</h2>
+      <p>학생들의 학습 기록 보호를 위해<br>선생님 비밀번호를 입력해 주세요.</p>
+      <input type="password" id="adminPasswordInput" class="modal-input" placeholder="비밀번호" autofocus autocomplete="current-password">
+      <div id="authErrorMsg" class="modal-error"></div>
+      <button type="button" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px; font-size:16px;" onclick="checkPassword()">대시보드 접속</button>
+      <p style="margin-top: 16px; font-size: 12px; color: #94A3B8;">* 초기 기본 비밀번호는 <strong>1234</strong> 입니다.</p>
+    </div>
+  </div>
+
+  <!-- 메인 헤더 -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-area">
+        <div class="logo-badge">🎓</div>
+        <div class="logo-title">
+          <h1>학습 게임 선생님 관리자</h1>
+          <p>학생별 퀴즈 점수 및 플레이 현황 실시간 집계</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn btn-outline btn-sm" onclick="fetchRecords()" title="새로고침">
+          🔄 새로고침
+        </button>
+        <button type="button" class="btn btn-success btn-sm" onclick="exportToCSV()" title="엑셀 CSV 다운로드">
+          📥 엑셀(CSV) 저장
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="promptChangePassword()">
+          🔑 암호 변경
+        </button>
+        <a href="index.html" class="btn btn-outline btn-sm">
+          🎮 게임으로 이동
+        </a>
+        <button type="button" class="btn btn-outline btn-sm" onclick="logout()" style="color:var(--danger)">
+          로그아웃
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 본문 -->
+  <main>
+    <!-- 요약 통계 카드 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon stat-blue">📋</div>
+        <div class="stat-info">
+          <p>총 플레이 횟수</p>
+          <h3 id="statTotalPlays">0회</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-green">👥</div>
+        <div class="stat-info">
+          <p>참여 학생 수</p>
+          <h3 id="statTotalStudents">0명</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-amber">🏆</div>
+        <div class="stat-info">
+          <p>전체 평균 점수</p>
+          <h3 id="statAvgScore">0점</h3>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-purple">⏱</div>
+        <div class="stat-info">
+          <p>평균 플레이 시간</p>
+          <h3 id="statAvgDuration">0초</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- 필터 및 제어 바 -->
+    <div class="filter-panel">
+      <div class="filter-group">
+        <select id="filterGame" class="filter-select" onchange="renderFiltered()">
+          <option value="">모든 게임</option>
+          <option value="word-island">낱말 탐험섬</option>
+          <option value="knowledge-maze">지식 탐험대</option>
+        </select>
+        <select id="filterSchool" class="filter-select" onchange="renderFiltered()">
+          <option value="">모든 학교</option>
+        </select>
+        <select id="filterGrade" class="filter-select" onchange="renderFiltered()">
+          <option value="">모든 학년</option>
+          <option value="1">1학년</option>
+          <option value="2">2학년</option>
+          <option value="3">3학년</option>
+          <option value="4">4학년</option>
+          <option value="5">5학년</option>
+          <option value="6">6학년</option>
+        </select>
+        <select id="filterClass" class="filter-select" onchange="renderFiltered()">
+          <option value="">모든 반</option>
+        </select>
+        <input type="text" id="searchKeyword" class="filter-input" placeholder="번호 또는 검색어" oninput="renderFiltered()">
+      </div>
+
+      <div class="view-tabs">
+        <button type="button" class="view-tab active" id="tabAll" onclick="setViewMode('all')">전체 기록</button>
+        <button type="button" class="view-tab" id="tabBest" onclick="setViewMode('best')">학생별 최고기록 순위</button>
+      </div>
+    </div>
+
+    <!-- 데이터 테이블 -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 60px;">순번</th>
+            <th>일시</th>
+            <th>학교</th>
+            <th>학년 / 반 / 번호</th>
+            <th>플레이 게임</th>
+            <th>점수</th>
+            <th>소요 시간</th>
+            <th>시도 횟수</th>
+            <th>상세</th>
+          </tr>
+        </thead>
+        <tbody id="recordsTableBody">
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-state-icon">⏳</div>
+                <h3>기록을 불러오는 중입니다...</h3>
+                <p>잠시만 기다려 주세요.</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- 상세 내역 모달 -->
+  <div id="detailModal" class="modal-overlay" style="display:none;">
+    <div class="modal-box" style="text-align: left; max-width: 500px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h2 style="font-size:20px;">📄 학생 기록 상세</h2>
+        <button type="button" onclick="closeDetailModal()" style="border:none; background:none; font-size:22px; cursor:pointer;">&times;</button>
+      </div>
+      <div id="detailContent"></div>
+      <div style="margin-top:20px; text-align:right;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeDetailModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://rlxqzyeimgvtltodvkju.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_9JTgqy_Utpn2GPv-qKfs1w_gn8r_r5N';
+    const PWD_STORAGE_KEY = 'study_admin_password_v1';
+    const AUTH_SESSION_KEY = 'study_admin_auth_session';
+
+    let allRecords = [];
+    let currentViewMode = 'all'; // 'all' | 'best'
+
+    // 초기 비밀번호 확인
+    function initAuth() {
+      const isAuth = sessionStorage.getItem(AUTH_SESSION_KEY);
+      if (isAuth === 'true') {
+        document.getElementById('authModal').style.display = 'none';
+        fetchRecords();
+      } else {
+        document.getElementById('authModal').style.display = 'flex';
+      }
+    }
+
+    function checkPassword() {
+      const input = document.getElementById('adminPasswordInput').value;
+      const savedPwd = localStorage.getItem(PWD_STORAGE_KEY) || '1234';
+      if (input === savedPwd) {
+        sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+        document.getElementById('authModal').style.display = 'none';
+        document.getElementById('authErrorMsg').textContent = '';
+        fetchRecords();
+      } else {
+        document.getElementById('authErrorMsg').textContent = '비밀번호가 올바르지 않습니다.';
+      }
+    }
+
+    document.getElementById('adminPasswordInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') checkPassword();
+    });
+
+    function logout() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      location.reload();
+    }
+
+    function promptChangePassword() {
+      const currentPwd = localStorage.getItem(PWD_STORAGE_KEY) || '1234';
+      const oldInput = prompt('현재 비밀번호를 입력해 주세요:');
+      if (oldInput === null) return;
+      if (oldInput !== currentPwd) {
+        alert('현재 비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      const newPwd = prompt('새로운 비밀번호를 입력해 주세요 (4자리 이상 권장):');
+      if (!newPwd || newPwd.trim().length === 0) {
+        alert('유효한 비밀번호를 입력해 주세요.');
+        return;
+      }
+      localStorage.setItem(PWD_STORAGE_KEY, newPwd.trim());
+      alert('비밀번호가 성공적으로 변경되었습니다!');
+    }
+
+    // 기록 불러오기
+    async function fetchRecords() {
+      const tbody = document.getElementById('recordsTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9">
+            <div class="empty-state">
+              <div class="empty-state-icon">⏳</div>
+              <h3>최신 기록을 조회하고 있습니다...</h3>
+            </div>
+          </td>
+        </tr>`;
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/game_records?select=*&order=created_at.desc`, {
+          headers: {
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`조회 실패 (HTTP ${response.status})`);
+        }
+
+        const data = await response.json();
+        allRecords = Array.isArray(data) ? data : [];
+        updateFilterDropdowns();
+        renderFiltered();
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-state-icon">⚠️</div>
+                <h3>기록 조회 중 오류가 발생했습니다</h3>
+                <p style="color:var(--danger)">${err.message}</p>
+                <button type="button" class="btn btn-outline btn-sm" onclick="fetchRecords()" style="margin-top:12px;">다시 시도</button>
+              </div>
+            </td>
+          </tr>`;
+      }
+    }
+
+    // 학교 및 반 필터 목록 자동 업데이트
+    function updateFilterDropdowns() {
+      const schoolSelect = document.getElementById('filterSchool');
+      const classSelect = document.getElementById('filterClass');
+      const currentSchool = schoolSelect.value;
+      const currentClass = classSelect.value;
+
+      const schools = Array.from(new Set(allRecords.map(r => r.school_name).filter(Boolean))).sort();
+      const classes = Array.from(new Set(allRecords.map(r => r.class_number).filter(Boolean))).sort((a,b) => a - b);
+
+      schoolSelect.innerHTML = '<option value="">모든 학교</option>' + schools.map(s => `<option value="${s}">${s}</option>`).join('');
+      classSelect.innerHTML = '<option value="">모든 반</option>' + classes.map(c => `<option value="${c}">${c}반</option>`).join('');
+
+      if (schools.includes(currentSchool)) schoolSelect.value = currentSchool;
+      if (classes.includes(Number(currentClass))) classSelect.value = currentClass;
+    }
+
+    // 탭 모드 전환
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      document.getElementById('tabAll').classList.toggle('active', mode === 'all');
+      document.getElementById('tabBest').classList.toggle('active', mode === 'best');
+      renderFiltered();
+    }
+
+    // 필터링 및 렌더링
+    function renderFiltered() {
+      const gameVal = document.getElementById('filterGame').value;
+      const schoolVal = document.getElementById('filterSchool').value;
+      const gradeVal = document.getElementById('filterGrade').value;
+      const classVal = document.getElementById('filterClass').value;
+      const searchVal = document.getElementById('searchKeyword').value.trim().toLowerCase();
+
+      let filtered = allRecords.filter(r => {
+        const gameSlug = r.game_id === 1 ? 'word-island' : (r.game_id === 2 ? 'knowledge-maze' : String(r.game_id));
+        if (gameVal && gameSlug !== gameVal) return false;
+        if (schoolVal && r.school_name !== schoolVal) return false;
+        if (gradeVal && String(r.grade) !== gradeVal) return false;
+        if (classVal && String(r.class_number) !== classVal) return false;
+        if (searchVal) {
+          const matchNumber = String(r.student_number).includes(searchVal);
+          const matchSchool = (r.school_name || '').toLowerCase().includes(searchVal);
+          if (!matchNumber && !matchSchool) return false;
+        }
+        return true;
+      });
+
+      // 최고기록 모드일 경우 (학교-학년-반-번호 당 최고점수 1건만 유지)
+      if (currentViewMode === 'best') {
+        const map = new Map();
+        filtered.forEach(r => {
+          const key = `${r.school_name}_${r.grade}_${r.class_number}_${r.student_number}_${r.game_id}`;
+          if (!map.has(key) || map.get(key).score < r.score) {
+            map.set(key, r);
+          }
+        });
+        filtered = Array.from(map.values()).sort((a,b) => b.score - a.score);
+      }
+
+      updateStats(filtered);
+      renderTable(filtered);
+    }
+
+    // 요약 통계 계산
+    function updateStats(records) {
+      document.getElementById('statTotalPlays').textContent = `${records.length.toLocaleString()}회`;
+
+      const uniqueStudents = new Set(records.map(r => `${r.school_name}_${r.grade}_${r.class_number}_${r.student_number}`));
+      document.getElementById('statTotalStudents').textContent = `${uniqueStudents.size.toLocaleString()}명`;
+
+      if (records.length > 0) {
+        const totalScore = records.reduce((sum, r) => sum + (Number(r.score) || 0), 0);
+        const avgScore = Math.round(totalScore / records.length);
+        document.getElementById('statAvgScore').textContent = `${avgScore.toLocaleString()}점`;
+
+        const totalDuration = records.reduce((sum, r) => sum + (Number(r.duration_seconds) || 0), 0);
+        const avgSec = Math.round(totalDuration / records.length);
+        const min = Math.floor(avgSec / 60);
+        const sec = avgSec % 60;
+        document.getElementById('statAvgDuration').textContent = min > 0 ? `${min}분 ${sec}초` : `${sec}초`;
+      } else {
+        document.getElementById('statAvgScore').textContent = '0점';
+        document.getElementById('statAvgDuration').textContent = '0초';
+      }
+    }
+
+    // 테이블 렌더링
+    function renderTable(records) {
+      const tbody = document.getElementById('recordsTableBody');
+      if (records.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9">
+              <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <h3>해당 조건의 플레이 기록이 없습니다</h3>
+                <p>학생들이 게임을 완료하면 자동으로 기록이 집계됩니다.</p>
+              </div>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = records.map((r, index) => {
+        const dateStr = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR', {
+          month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+        }) : '-';
+
+        const gameTitle = r.game_id === 1 ? '낱말 탐험섬' : (r.game_id === 2 ? '지식 탐험대' : `게임 #${r.game_id}`);
+        const gameBadgeClass = r.game_id === 1 ? 'badge-game1' : 'badge-game2';
+
+        const duration = formatDuration(r.duration_seconds);
+
+        return `
+          <tr>
+            <td><strong>${index + 1}</strong></td>
+            <td style="color:var(--text-sub); font-size:13px;">${dateStr}</td>
+            <td style="font-weight:700;">${r.school_name || '-'}</td>
+            <td>
+              <span style="font-weight:700;">${r.grade}학년 ${r.class_number}반</span>
+              <span class="badge" style="background:#F1F5F9; color:#475569; margin-left:4px;">${r.student_number}번</span>
+            </td>
+            <td><span class="badge ${gameBadgeClass}">${gameTitle}</span></td>
+            <td><span class="badge-score">${(r.score || 0).toLocaleString()}점</span></td>
+            <td>${duration}</td>
+            <td>${r.attempts ? `${r.attempts}회` : '1회'}</td>
+            <td>
+              <button type="button" class="btn btn-outline btn-sm" onclick="showDetail(${JSON.stringify(r).replace(/"/g, '&quot;')})">보기</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function formatDuration(totalSec) {
+      const s = Number(totalSec) || 0;
+      const min = Math.floor(s / 60);
+      const sec = s % 60;
+      return min > 0 ? `${min}분 ${sec}초` : `${sec}초`;
+    }
+
+    // 상세 보기 모달
+    function showDetail(record) {
+      const content = document.getElementById('detailContent');
+      const gameTitle = record.game_id === 1 ? '낱말 탐험섬' : (record.game_id === 2 ? '지식 탐험대' : `게임 #${record.game_id}`);
+      const dateStr = record.created_at ? new Date(record.created_at).toLocaleString('ko-KR') : '-';
+
+      let detailsHtml = '';
+      if (record.details && typeof record.details === 'object' && Object.keys(record.details).length > 0) {
+        detailsHtml = `
+          <div style="margin-top:16px;">
+            <p style="font-size:13px; font-weight:700; color:var(--text-sub); margin-bottom:6px;">세부 데이터:</p>
+            <pre style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px; font-size:12px; overflow-x:auto;">${JSON.stringify(record.details, null, 2)}</pre>
+          </div>`;
+      }
+
+      content.innerHTML = `
+        <div class="detail-item"><span class="detail-label">제출 일시</span><span class="detail-value">${dateStr}</span></div>
+        <div class="detail-item"><span class="detail-label">학교명</span><span class="detail-value">${record.school_name || '-'}</span></div>
+        <div class="detail-item"><span class="detail-label">학적 정보</span><span class="detail-value">${record.grade}학년 ${record.class_number}반 ${record.student_number}번</span></div>
+        <div class="detail-item"><span class="detail-label">게임명</span><span class="detail-value">${gameTitle}</span></div>
+        <div class="detail-item"><span class="detail-label">최종 획득 점수</span><span class="detail-value" style="color:#2563EB; font-size:16px;">${(record.score || 0).toLocaleString()}점</span></div>
+        <div class="detail-item"><span class="detail-label">소요 시간</span><span class="detail-value">${formatDuration(record.duration_seconds)}</span></div>
+        <div class="detail-item"><span class="detail-label">문제 시도 횟수</span><span class="detail-value">${record.attempts || 1}회</span></div>
+        ${detailsHtml}
+      `;
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+
+    function closeDetailModal() {
+      document.getElementById('detailModal').style.display = 'none';
+    }
+
+    // 엑셀(CSV) 내보내기 (한글 깨짐 방지 UTF-8 BOM 포함)
+    function exportToCSV() {
+      if (allRecords.length === 0) {
+        alert('내보낼 기록 데이터가 없습니다.');
+        return;
+      }
+
+      const headers = ['제출일시', '학교명', '학년', '반', '번호', '게임명', '점수', '소요시간(초)', '시도횟수'];
+      const rows = allRecords.map(r => {
+        const gameTitle = r.game_id === 1 ? '낱말 탐험섬' : (r.game_id === 2 ? '지식 탐험대' : r.game_id);
+        const dateStr = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '';
+        return [
+          `"${dateStr}"`,
+          `"${r.school_name || ''}"`,
+          r.grade || '',
+          r.class_number || '',
+          r.student_number || '',
+          `"${gameTitle}"`,
+          r.score || 0,
+          r.duration_seconds || 0,
+          r.attempts || 1
+        ].join(',');
+      });
+
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `학습게임_학생기록_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // 시작 시 인증 체크
+    window.addEventListener('DOMContentLoaded', initAuth);
+  </script>
+</body>
+</html>

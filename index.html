@@ -128,46 +128,57 @@
 
     /* Quiz Modal (Prevent size distortion and scrollbar) */
     #quizModal {
-      overflow: hidden !important;
+      overflow-y: auto;
     }
     .quiz {
       width: min(860px, 94vw);
-      max-height: 92vh;
-      overflow: hidden;
-      padding: 22px 28px 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+      padding: 16px 22px 18px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       box-sizing: border-box;
       margin: auto;
       transform: none !important;
     }
-    .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; flex: none; }
+    .quiz::-webkit-scrollbar {
+      width: 6px;
+    }
+    .quiz::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+    .quiz-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 38px; flex: none; }
     .quiz-card-badge { display: flex; align-items: center; gap: 8px; }
     .badge-gold {
       display: inline-flex; align-items: center; gap: 6px;
       background: linear-gradient(135deg, #F59E0B, #FBBF24);
-      color: #78350F; font-size: 20px; font-weight: 700;
-      padding: 5px 16px; border-radius: 999px;
+      color: #78350F; font-size: 18px; font-weight: 700;
+      padding: 4px 14px; border-radius: 999px;
       border: 2px solid #FEF08A; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
     }
     .badge-normal {
       display: inline-flex; align-items: center; gap: 6px;
-      background: #F1F5F9; color: #475569; font-size: 19px; font-weight: 600;
-      padding: 5px 14px; border-radius: 999px; border: 1.5px solid #CBD5E1;
+      background: #F1F5F9; color: #475569; font-size: 17px; font-weight: 600;
+      padding: 4px 12px; border-radius: 999px; border: 1.5px solid #CBD5E1;
     }
     .doorbadge { display: none; }
     #quizHintTag { display: none; }
-    #quizPrompt { margin: 0; font-size: clamp(28px, 3.8vw, 40px); line-height: 1.35; word-break: keep-all; text-align: center; font-weight: 400; flex: none; }
+    #quizPrompt { margin: 0; font-size: clamp(21px, 2.8vw, 30px); line-height: 1.35; word-break: keep-all; text-align: center; font-weight: 400; flex: none; }
     #quizPrompt strong, #quizPrompt b { color: var(--tomato-d); font-weight: 700; }
-    #quizPrompt .quote { display: block; margin-top: 10px; background: #fff; border-radius: 20px; padding: 14px 20px; font-size: clamp(22px, 3vw, 32px); line-height: 1.45; color: var(--ink); box-shadow: inset 0 0 0 3px var(--line); word-break: keep-all; }
-    #quizOptions { display: grid; grid-template-columns: 1fr; gap: 10px; flex: none; width: 100%; }
-    #quizOptions.ox-mode { grid-template-columns: 1fr 1fr; gap: 16px; }
+    #quizPrompt .quote { display: block; margin-top: 8px; background: #fff; border-radius: 16px; padding: 10px 16px; font-size: clamp(17px, 2.2vw, 23px); line-height: 1.4; color: var(--ink); box-shadow: inset 0 0 0 2.5px var(--line); word-break: keep-all; }
+    #quizOptions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; flex: none; width: 100%; }
+    #quizOptions.col-1 { grid-template-columns: 1fr; gap: 8px; }
+    #quizOptions.ox-mode { grid-template-columns: 1fr 1fr; gap: 14px; }
     .opt {
-      min-height: 66px;
-      font-size: clamp(20px, 2.5vw, 25px);
-      border-radius: 22px;
-      padding: 10px 22px;
+      min-height: 52px;
+      font-size: clamp(17px, 2vw, 21px);
+      border-radius: 18px;
+      padding: 8px 18px;
       display: flex;
       align-items: center;
       justify-content: flex-start;
@@ -183,51 +194,51 @@
       text-align: left;
       line-height: 1.3;
       word-break: keep-all;
-      overflow-wrap: break-word;
+      overflow-wrap: anywhere;
     }
 
     .opt .n {
-      width: 38px;
-      height: 38px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.35);
       display: grid;
       place-items: center;
-      font-size: 21px;
+      font-size: 18px;
       font-weight: 700;
       flex: none;
-      margin-right: 14px;
+      margin-right: 10px;
     }
     .opt.ox {
-      min-height: 110px;
-      font-size: 80px;
+      min-height: 96px;
+      font-size: 72px;
       line-height: 1;
       justify-content: center;
       text-align: center;
-      padding: 10px;
+      padding: 8px;
     }
     .opt.ox .txt {
       text-align: center;
-      font-size: 80px;
+      font-size: 72px;
       font-weight: 700;
       line-height: 1;
     }
     .opt[disabled] { cursor: default; }
     .opt-wrong { filter: grayscale(1); opacity: .45; transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.15) !important; }
     .opt-right { outline: 5px solid #fff; box-shadow: 0 0 0 8px var(--leaf), 0 5px 0 var(--d) !important; transform: none !important; }
-    .quiz-bottom { display: flex; justify-content: space-between; align-items: center; gap: 14px; min-height: 58px; flex: none; }
-    #quizHintBox { background: #FFF0C7; border-radius: 20px; padding: 10px 18px; font-size: 24px; text-align: center; flex: none; }
-    #quizHintBox b { color: var(--tomato-d); font-weight: 700; letter-spacing: 4px; font-size: 30px; }
+    .quiz-bottom { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; flex: none; }
+    #quizHintBox { background: #FFF0C7; border-radius: 16px; padding: 8px 16px; font-size: 20px; text-align: center; flex: none; }
+    #quizHintBox b { color: var(--tomato-d); font-weight: 700; letter-spacing: 2px; font-size: 24px; }
     #quizFeedback {
       text-align: center;
-      font-size: clamp(23px, 3.2vw, 29px);
-      padding: 10px 18px;
-      border-radius: 20px;
+      font-size: clamp(20px, 2.5vw, 25px);
+      padding: 8px 16px;
+      border-radius: 18px;
       background: rgba(255, 255, 255, 0.92);
       border: 2px solid var(--line);
       box-shadow: 0 3px 0 #E3DAC6;
       line-height: 1.3;
-      min-height: 58px;
+      min-height: 50px;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
@@ -235,15 +246,15 @@
       justify-content: center;
       flex: none;
     }
-    #quizFeedback .mean { display: block; font-size: clamp(18px, 2.2vw, 21px); color: var(--ink-soft); margin-top: 3px; font-family: inherit; font-weight: 400; }
+    #quizFeedback .mean { display: block; font-size: clamp(15px, 1.8vw, 18px); color: var(--ink-soft); margin-top: 3px; font-family: inherit; font-weight: 400; word-break: keep-all; overflow-wrap: anywhere; }
     .shake { animation: shake .4s ease-in-out; }
     @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
     /* Result Modal (Wide 2-column layout) */
     .result {
       width: min(940px, 94vw);
-      max-height: 92vh;
+      max-height: 90vh;
       overflow-y: auto;
-      padding: 22px 28px 24px;
+      padding: 16px 22px 18px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -315,7 +326,7 @@
     .star-on { color: var(--sun); text-shadow: 0 5px 0 var(--sun-d); } .star-off { color: #E4DDCE; }
     .stats { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .stat { background: #F8F5EE;
-      border-radius: 20px;
+      border-radius: 18px;
       padding: 6px 16px;
       display: flex;
       align-items: center;
@@ -365,7 +376,8 @@
       .bubble::before { display: none; }
       .opt { font-size: clamp(18px, 3.8vw, 22px); min-height: 60px; padding: 8px 16px; }
       .opt .n { width: 34px; height: 34px; font-size: 19px; margin-right: 10px; }
-      .opt.ox { min-height: 110px; font-size: 70px; }
+      .opt.ox { min-height: 96px; font-size: 64px; }
+      #quizOptions { grid-template-columns: 1fr; gap: 8px; }
       .notice { font-size: 17px; }
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -383,17 +395,84 @@
     #comboBadge.bump { animation: pop .4s cubic-bezier(.2, 1.8, .4, 1); }
     #radarWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 50%; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
     #radar { display: block; width: 150px; height: 150px; border-radius: 50%; }
-    @media (pointer: coarse) { #radarWrap { top: calc(max(14px, env(safe-area-inset-top, 0px)) + 130px); bottom: auto; } #radar { width: 116px; height: 116px; } }
+    @media (pointer: coarse) { #radar { width: 116px; height: 116px; } }
     #joyZone { position: absolute; left: 0; top: 0; width: 68%; height: 100%; z-index: 15; display: none; touch-action: none; user-select: none; -webkit-user-select: none; }
     #joyBase { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.45); border: 4px solid rgba(255,255,255,.9); box-shadow: 0 8px 24px rgba(0,0,0,.15); transform: translate(-50%, 50%); left: 110px; bottom: 100px; top: auto; pointer-events: none; opacity: .65; transition: opacity .2s ease; }
     #joyKnob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: var(--sea); box-shadow: 0 5px 0 var(--sea-d); pointer-events: none; }
-    #jumpBtn { position: absolute; right: max(24px, env(safe-area-inset-right, 0px)); bottom: max(28px, env(safe-area-inset-bottom, 0px)); z-index: 16; width: 108px; height: 108px; font-size: 32px; font-family: 'Jua', sans-serif; display: none; touch-action: none; user-select: none; -webkit-user-select: none; box-shadow: 0 8px 0 var(--sun-d), 0 10px 24px rgba(0,0,0,.18); }
-    #jumpBtn:active { transform: translateY(4px); box-shadow: 0 4px 0 var(--sun-d); }
-    @media (pointer: coarse) { #joyZone { display: block; } #jumpBtn { display: inline-flex; } .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); } }
+    #rightControls {
+      position: absolute;
+      right: max(24px, env(safe-area-inset-right, 0px));
+      top: calc(50% - 35px);
+      transform: translateY(-50%);
+      z-index: 16;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    #rightControls > * {
+      pointer-events: auto;
+    }
+    #emoteBtn {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      font-size: 34px;
+      border-radius: 50%;
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #jumpBtn {
+      position: relative;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      background: rgba(255, 255, 255, 0.40);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 3.5px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.08s ease, box-shadow 0.08s ease;
+      color: #FFFFFF;
+      padding: 0;
+      flex: none;
+    }
+    #jumpBtn .jump-txt {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Jua', 'BMJUA', sans-serif;
+      color: #FFFFFF;
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+      letter-spacing: 0.5px;
+    }
+    #jumpBtn:active {
+      transform: translateY(4px) scale(0.95);
+      background: rgba(255, 214, 0, 0.65);
+      border-color: #FFFFFF;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+    }
+
+    @media (pointer: coarse) { #joyZone { display: block; } #jumpBtn { display: flex; } .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); } }
     body.touch-device #joyZone { display: block !important; }
-    body.touch-device #jumpBtn { display: inline-flex !important; }
+    body.touch-device #jumpBtn { display: flex !important; }
     body.touch-device .notice { bottom: auto !important; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px) !important; }
-    body.touch-device #radarWrap { top: calc(max(14px, env(safe-area-inset-top, 0px)) + 130px) !important; bottom: auto !important; }
+    /* radar on bottom */
     body.touch-device #radar { width: 116px; height: 116px; }
 
     .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -424,10 +503,10 @@
     #bookScroll { overflow-y: auto; display: grid; gap: 12px; padding-right: 4px; }
     .overlay { z-index: 40; } #startModal, #resultModal { z-index: 50; } #pauseModal, #bookModal { z-index: 60; }
     .toast { bottom: auto !important; top: calc(86px + env(safe-area-inset-top, 0px)); }
-    #app:not(.play) .hud, #app:not(.play) #radarWrap, #app:not(.play) #noticeBox, #app:not(.play) #joyZone, #app:not(.play) #jumpBtn, #app:not(.play) #comboBadge { display: none !important; }
+    #app:not(.play) .hud, #app:not(.play) #radarWrap, #app:not(.play) #noticeBox, #app:not(.play) #joyZone, #app:not(.play) #jumpBtn, #app:not(.play) #comboBadge, #app:not(.play) #rightControls { display: none !important; }
     /* 감정표현 */
-    #emoteBtn { position: absolute; z-index: 16; right: max(150px, calc(env(safe-area-inset-right, 0px) + 150px)); bottom: max(28px, env(safe-area-inset-bottom, 0px)); width: 84px; height: 84px; font-size: 40px; }
-    @media (pointer: fine) { #emoteBtn { right: max(196px, calc(env(safe-area-inset-right, 0px) + 196px)); bottom: max(24px, env(safe-area-inset-bottom, 0px)); } }
+    /* emote button inside rightControls */
+
     #emoteMenu { position: absolute; z-index: 17; left: 50%; width: max-content; transform: translateX(-50%); bottom: calc(max(28px, env(safe-area-inset-bottom, 0px)) + 104px); display: flex; gap: 10px; background: rgba(255,255,255,.92); padding: 12px; border-radius: 30px; box-shadow: 0 8px 0 rgba(0,0,0,.08); max-width: calc(100% - 32px); flex-wrap: wrap; justify-content: center; }
     #emoteMenu.hidden { display: none !important; }
     .emo { flex-direction: column; width: 88px; min-height: 92px; padding: 6px; font-size: 18px; gap: 0; border-radius: 22px; }
@@ -460,7 +539,21 @@
       <h1 class="stage-banner-title" id="bannerTitle">게임 스타트</h1>
     </div>
   </div>
-  <button type="button" id="emoteBtn" class="jelly grape round" onclick="openEmoteMenu()" aria-label="감정표현">😊</button>
+  <div id="rightControls">
+    <button type="button" id="emoteBtn" class="jelly grape round" onclick="openEmoteMenu()" aria-label="감정표현">😊</button>
+    <button type="button" id="jumpBtn" aria-label="점프">
+      <svg viewBox="0 0 64 64" width="46" height="46" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <path d="M16 52 Q32 44 48 52" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
+        <path d="M22 57 Q32 52 42 57" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.75" />
+        <circle cx="32" cy="14" r="6" fill="#FFFFFF" />
+        <path d="M32 20 L32 34" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" />
+        <path d="M17 19 L26 25 L32 25 L38 25 L47 19" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M21 44 L27 34 L32 34 L37 34 L43 44" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M28 6 L32 2 L36 6" stroke="#FFE066" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <span class="jump-txt">점프</span>
+    </button>
+  </div>
   <div id="emoteMenu" class="hidden" role="menu" aria-label="감정표현 고르기">
     <button type="button" class="jelly white emo" onclick="emote('wave')"><span>👋</span>안녕</button>
     <button type="button" class="jelly white emo" onclick="emote('happy')"><span>😄</span>신나</button>
@@ -473,7 +566,7 @@
   <div class="notice" id="noticeBox"><span id="noticeText">빛나는 카드를 찾아요!</span></div>
   <div id="radarWrap"><canvas id="radar" width="300" height="300" aria-label="지도"></canvas></div>
   <div id="joyZone" aria-label="움직이기"><div id="joyBase"><div id="joyKnob"></div></div></div>
-  <button type="button" id="jumpBtn" class="jelly sun round" aria-label="점프">점프</button>
+
 
   <!-- 시작 화면 -->
   <div id="startModal" class="overlay" style="display:flex;flex-direction:column;justify-content:flex-start;gap:18px;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 75%)">
@@ -500,9 +593,10 @@
         <button type="button" class="jelly tomato mode" onclick="startGame('timed')">⏱ 3분 도전<small>3분 동안 많이 모으기</small></button>
       </div>
       <div class="start-foot">
-                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button type="button" class="jelly grape" onclick="openBook()" style="font-size:22px">📖 낱말 도감 <span id="bookCount"></span></button>
           <button type="button" class="jelly white" id="homeSoundBtn" onclick="toggleSound()" style="font-size:20px;min-height:56px;padding:10px 18px" aria-label="효과음 켜기/끄기">🔊 효과음 켜짐</button>
+          <a href="admin.html" class="jelly white" style="text-decoration:none;font-size:18px;min-height:56px;padding:10px 18px;display:inline-flex;align-items:center;gap:6px;" title="선생님 관리자 대시보드">🎓 관리자</a>
         </div>
         <span class="small" style="color:var(--ink-soft);font-size:14px">키보드: WASD/방향키 이동 · 스페이스 점프 | 태블릿: 화면 터치 밀기 이동 · 점프 버튼</span>
       </div>
@@ -521,8 +615,8 @@
       <div id="quizHintBox" class="hidden"></div>
       <div id="quizFeedback" class="hidden" aria-live="polite"></div>
       <div class="quiz-bottom">
-        <button type="button" class="jelly white" onclick="closeQuiz(true)" style="font-size:22px;min-height:58px;padding:12px 24px">↩ 나중에</button>
-        <button type="button" id="quizHintBtn" class="jelly sun" onclick="showHint()" style="font-size:22px;min-height:58px;padding:12px 24px"><span class="art" data-art="bulb" style="width:32px;height:32px"></span>힌트</button>
+        <button type="button" class="jelly white" onclick="closeQuiz(true)" style="font-size:19px;min-height:48px;padding:8px 20px">↩ 나중에</button>
+        <button type="button" id="quizHintBtn" class="jelly sun" onclick="showHint()" style="font-size:19px;min-height:48px;padding:8px 20px"><span class="art" data-art="bulb" style="width:28px;height:28px"></span>힌트</button>
       </div>
     </div>
   </div>
@@ -6071,7 +6165,10 @@
       }
 
       $("quizPrompt").innerHTML = q.prompt;
-      const box = $("quizOptions"); box.innerHTML = ""; box.className = q.ox ? "ox-mode" : "";
+      const box = $("quizOptions"); box.innerHTML = "";
+      const isLong = !q.ox && q.options.some(o => (o.label || "").length > 22);
+      box.className = q.ox ? "ox-mode" : (isLong ? "col-1" : "");
+      $("quizCard").scrollTop = 0;
       q.options.forEach((o, i) => {
         const b = document.createElement("button"); b.type = "button";
 
@@ -6345,11 +6442,13 @@
     })();
 
     const triggerJump = e => {
+      if (e.stopPropagation) e.stopPropagation();
       e.preventDefault();
       P.jumpQueued = true;
     };
     $("jumpBtn").addEventListener("pointerdown", triggerJump);
     $("jumpBtn").addEventListener("touchstart", triggerJump, { passive: false });
+    $("jumpBtn").addEventListener("click", triggerJump);
 
     let isPointerDragging = false;
     // 화면 끌어서 시점 돌리기 (마우스·오른쪽 화면 터치)
