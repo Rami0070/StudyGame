@@ -1,0 +1,2 @@
+[functions.submit-game-result]
+verify_jwt = false

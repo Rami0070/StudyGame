@@ -964,7 +964,7 @@
     /* ───────────── 상태 ───────────── */
     const G = {
       mode: "free", hero: load().hero || "explorer", customName: load().customHeroName || "", soundOn: load().soundOn !== false,
-      playing: false, paused: true, score: 0, combo: 0, got: 0, total: 30, stage: 1, stageGot: 0, time: 0,
+      playing: false, paused: true, score: 0, combo: 0, got: 0, total: 30, stage: 1, stageGot: 0, time: 0, totalWrongAttempts: 0,
       cards: [], activeCard: null, attempts: 0, hintUsed: false, locked: false, missed: new Set(), learned: []
     };
     const P = { pos: new THREE.Vector3(0, 0, 4), vy: 0, onGround: true, face: Math.PI, moving: false, jumpQueued: false };
@@ -6136,7 +6136,7 @@
         updateHud(true);
         setTimeout(() => { collect(card); closeQuiz(false); }, 1300);
       } else {
-        G.attempts++; G.combo = 0; sfx("wrong");
+        G.attempts++; G.totalWrongAttempts = (G.totalWrongAttempts || 0) + 1; G.combo = 0; sfx("wrong");
         btn.classList.add("opt-wrong"); btn.disabled = true;
         fb.style.color = "var(--tomato-d)";
         if (G.attempts >= 2) {
@@ -6720,7 +6720,7 @@
     }
     function startGame(mode) {
       ["startModal", "resultModal", "pauseModal", "quizModal", "bookModal"].forEach(hide);
-      G.mode = mode; G.score = 0; G.combo = 0; G.got = 0; G.stage = 1; G.stageGot = 0; G.total = 30; G.time = 0; G.missed = new Set(); G.learned = []; G.saved = false;
+      G.mode = mode; G.score = 0; G.combo = 0; G.got = 0; G.stage = 1; G.stageGot = 0; G.total = 30; G.time = 0; G.totalWrongAttempts = 0; G.missed = new Set(); G.learned = []; G.saved = false;
       scene.remove(hero); hero = makeHero(G.hero); scene.add(hero);
       refreshStageCompanions();
       P.pos.set(0, 0, 4); P.vy = 0; P.face = Math.PI; camYaw = 0; camPitch = .5;
@@ -6742,6 +6742,9 @@
     function endGame(all) {
       if (!G.playing) return;
       G.playing = false; G.paused = true;
+      if (typeof window.submitStudyGameRecord === "function") {
+        window.submitStudyGameRecord({ gameSlug: "word-island", score: G.score, durationSeconds: G.mode === "timed" ? Math.min(G.time, TIME_LIMIT) : G.time, attempts: G.totalWrongAttempts || 0, details: { mode: G.mode, cardsCollected: G.got, totalCards: G.total, stage: G.stage } });
+      }
       hide("quizModal"); sfx("end");
       $("resultTitle").textContent = all ? (G.stage >= 3 && G.stageGot >= 10 ? "3개 스테이지 모두 클리어!" : "다 모았어요!") : "시간 끝!";
       $("resultScore").textContent = G.score;
@@ -6854,6 +6857,7 @@
     import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@2.0.1/dist/index.mjs';
     inject();
   </script>
+  <script src="./student-records.js"></script>
 </body>
 </html>
 

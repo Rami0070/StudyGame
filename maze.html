@@ -2163,6 +2163,10 @@
       const sc = gameState.activeScenario;
       const gates = gameState.gateObjects;
       const firstTry = gates.filter(g => g.attempts === 0).length;
+      const totalAttempts = gates.reduce((sum, gate) => sum + (Number(gate.attempts) || 0), 0);
+      if (typeof window.submitStudyGameRecord === "function") {
+        window.submitStudyGameRecord({ gameSlug: "knowledge-maze", score: gameState.stars, durationSeconds: Math.round(gameState.elapsedMs / 1000), attempts: totalAttempts, details: { scenario: sc.id, scenarioTitle: sc.title, firstTry, solvedCount: gameState.solvedCount, totalCount: gameState.totalCount } });
+      }
       const maxStars = gates.length * 3;
       const rating = gameState.stars >= maxStars * 0.9 ? 3 : gameState.stars >= maxStars * 0.6 ? 2 : 1;
 
@@ -2234,5 +2238,6 @@
     import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@2.0.1/dist/index.mjs';
     inject();
   </script>
+  <script src="./student-records.js"></script>
 </body>
 </html>
