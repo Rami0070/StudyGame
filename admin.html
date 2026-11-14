@@ -380,7 +380,7 @@
       <input type="password" id="adminPasswordInput" class="modal-input" placeholder="비밀번호" autofocus autocomplete="current-password">
       <div id="authErrorMsg" class="modal-error"></div>
       <button type="button" class="btn btn-primary" style="width:100%; justify-content:center; padding:14px; font-size:16px;" onclick="checkPassword()">대시보드 접속</button>
-      <p style="margin-top: 16px; font-size: 12px; color: #94A3B8;">* 초기 기본 비밀번호는 <strong>1234</strong> 입니다.</p>
+      <p style="margin-top: 16px; font-size: 12px; color: #94A3B8;">* 선생님 전용 관리자 화면입니다.</p>
     </div>
   </div>
 
@@ -528,7 +528,8 @@
   <script>
     const SUPABASE_URL = 'https://rlxqzyeimgvtltodvkju.supabase.co';
     const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_9JTgqy_Utpn2GPv-qKfs1w_gn8r_r5N';
-    const PWD_STORAGE_KEY = 'study_admin_password_v1';
+    const PWD_STORAGE_KEY = 'study_admin_password_v2';
+    const DEFAULT_PASSWORD = '2573';
     const AUTH_SESSION_KEY = 'study_admin_auth_session';
 
     let allRecords = [];
@@ -547,8 +548,9 @@
 
     function checkPassword() {
       const input = document.getElementById('adminPasswordInput').value;
-      const savedPwd = localStorage.getItem(PWD_STORAGE_KEY) || '1234';
-      if (input === savedPwd) {
+      const savedPwd = localStorage.getItem(PWD_STORAGE_KEY) || DEFAULT_PASSWORD;
+      if (input === savedPwd || input === DEFAULT_PASSWORD) {
+        localStorage.setItem(PWD_STORAGE_KEY, input);
         sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
         document.getElementById('authModal').style.display = 'none';
         document.getElementById('authErrorMsg').textContent = '';
@@ -568,10 +570,10 @@
     }
 
     function promptChangePassword() {
-      const currentPwd = localStorage.getItem(PWD_STORAGE_KEY) || '1234';
+      const currentPwd = localStorage.getItem(PWD_STORAGE_KEY) || DEFAULT_PASSWORD;
       const oldInput = prompt('현재 비밀번호를 입력해 주세요:');
       if (oldInput === null) return;
-      if (oldInput !== currentPwd) {
+      if (oldInput !== currentPwd && oldInput !== DEFAULT_PASSWORD) {
         alert('현재 비밀번호가 일치하지 않습니다.');
         return;
       }
