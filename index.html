@@ -52,12 +52,12 @@
     .overlay.dim { background: rgba(43, 36, 70, .45); }
     .art img, .art svg { width: 100%; height: 100%; display: block; object-fit: contain; }
 
-    /* 하늘 장식 (시작 화면) */
-    .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .9; }
+    /* 하늘 & 산 배경 장식 (시작 화면) */
+    .cloud { position: fixed; background: #fff; border-radius: 999px; opacity: .9; pointer-events: none; z-index: 0; }
     .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
     .cloud::before { width: 55%; height: 160%; left: 15%; top: -70%; }
     .cloud::after { width: 40%; height: 120%; right: 12%; top: -45%; }
-    .hills { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; }
+    .hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: clamp(220px, 34vh, 380px); pointer-events: none; z-index: 0; }
 
     /* 시작 화면 */
     #charSelectModal { background: linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 75%); flex-direction: column; justify-content: flex-start; gap: 18px; }
@@ -386,7 +386,7 @@
     .hud-center { display: flex; gap: 10px; align-items: center; }
     .stage-pill { font-size: 22px; padding: 8px 18px; font-weight: bold; background: var(--sea); color: #fff; letter-spacing: 0.5px; }
     .stage-banner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; pointer-events: none; display: flex; align-items: center; justify-content: center; animation: bannerPop 2.4s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; }
-    .stage-banner-box { background: rgba(255, 255, 255, 0.95); border: 6px solid var(--sun); box-shadow: 0 14px 44px rgba(0, 0, 0, 0.32), 0 0 50px rgba(255, 197, 49, 0.45); border-radius: 40px; padding: 24px 64px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; backdrop-filter: blur(8px); }
+    .stage-banner-box { background: rgba(255, 255, 255, 0.95); border: 6px solid var(--sun); box-shadow: 0 14px 44px rgba(0, 0, 0, 0.32), 0 0 50px rgba(255, 197, 49, 0.45); border-radius: 40px; padding: 24px 64px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .stage-banner-sub { font-size: 24px; color: var(--ink-soft); letter-spacing: 1px; }
     .stage-banner-title { margin: 0; font-size: clamp(48px, 9vw, 84px); color: #FF5722; -webkit-text-stroke: 3px #fff; paint-order: stroke fill; text-shadow: 0 6px 0 rgba(0, 0, 0, 0.15); white-space: nowrap; }
     @keyframes bannerPop { 0% { opacity: 0; transform: translate(-50%, -40%) scale(0.5); } 14% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 24% { transform: translate(-50%, -50%) scale(1); } 78% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(0.85); } }
@@ -441,10 +441,8 @@
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
-      background: rgba(255, 255, 255, 0.40);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 3.5px solid rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.82);
+      border: 3.5px solid rgba(255, 255, 255, 0.95);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 2px 4px rgba(255, 255, 255, 0.6);
       cursor: pointer;
       transition: transform 0.08s ease, background 0.08s ease, box-shadow 0.08s ease;
@@ -572,7 +570,11 @@
   <div id="startModal" class="overlay" style="display:flex;flex-direction:column;justify-content:flex-start;gap:18px;background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 75%)">
     <div class="cloud" style="width:180px;height:56px;left:6%;top:9%"></div>
     <div class="cloud" style="width:130px;height:42px;right:9%;top:16%"></div>
-    <svg class="hills" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 Q200 40 420 110 T820 90 T1200 100 V200 H0Z" fill="#9BE08A"/><path d="M0 160 Q300 90 600 150 T1200 140 V200 H0Z" fill="#7BD36B"/></svg>
+    <svg class="hills" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,170 C120,100 220,40 360,75 C480,105 580,165 720,150 C860,135 960,70 1100,55 C1240,40 1340,90 1440,120 V320 H0 Z" fill="#A8E8B4"/>
+      <path d="M0,210 C140,150 260,95 420,125 C560,150 680,205 840,180 C980,155 1100,100 1260,115 C1360,125 1410,160 1440,180 V320 H0 Z" fill="#88D775"/>
+      <path d="M0,250 C160,200 280,150 460,175 C620,195 740,240 920,220 C1080,200 1220,160 1360,185 C1410,195 1430,210 1440,225 V320 H0 Z" fill="#5EBF46"/>
+    </svg>
     <div class="logo"><span class="art" data-art="compass" style="width:84px;height:84px"></span><h1>낱말 탐험섬</h1></div>
     <div class="panel start-card">
       <div class="step-title"><b>1</b>누구랑 갈까?</div>
@@ -1169,18 +1171,19 @@
 
     function initThree() {
       const box = $("gameViewport");
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
       scene = new THREE.Scene();
       scene.fog = new THREE.Fog(lin(0xE6F4FF), 100, 260);
       camera = new THREE.PerspectiveCamera(50, box.clientWidth / box.clientHeight, 0.1, 400);
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouch ? 1.35 : 1.75));
       renderer.setSize(box.clientWidth, box.clientHeight);
       renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.05;
       
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = isTouch ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
       box.appendChild(renderer.domElement);
 
       // 부드러운 햇살과 구름빛이 감도는 따뜻한 하늘 돔
@@ -1205,8 +1208,9 @@
       scene.add(hemiLight);
       sun = new THREE.DirectionalLight(lin(0xFFF0D6), 0.75);
       sun.castShadow = true;
-      sun.shadow.mapSize.set(2048, 2048);
-      sun.shadow.radius = 5.5;
+      const shadowRes = isTouch ? 1024 : 2048;
+      sun.shadow.mapSize.set(shadowRes, shadowRes);
+      sun.shadow.radius = isTouch ? 2.5 : 5.5;
       sun.shadow.bias = -0.0004;
       Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 55, bottom: -55, near: 1, far: 180 });
       scene.add(sun); scene.add(sun.target);
@@ -1368,7 +1372,7 @@
 
     function buildWorld() {
       // 물결치는 바다 + 해변 거품
-      seaGeo = new THREE.PlaneGeometry(500, 500, 100, 100);
+      seaGeo = new THREE.PlaneGeometry(500, 500, 36, 36);
       seaGeo.rotateX(-Math.PI / 2);
       seaGeo.userData.base = Float32Array.from(seaGeo.attributes.position.array);
       const sea = new THREE.Mesh(seaGeo, stdPalette(0x00A0E9, 0x0044FF, 0x1E293B, { roughness: .35, metalness: .03, transparent: true, opacity: .92 }));
@@ -1648,9 +1652,10 @@
       }
     }
 
+    let seaTick = 0;
     // 매 프레임: 바다 물결, 거품, 나무 흔들림, 나비, 구름
     function updateWorld(t, dt) {
-      if (seaGeo) {
+      if (seaGeo && (++seaTick % 2 === 0)) {
         const p = seaGeo.attributes.position, base = seaGeo.userData.base;
         for (let i = 0; i < p.count; i++) {
           const x = base[i * 3], z = base[i * 3 + 2];
@@ -1713,20 +1718,44 @@
       }
     }
 
-    // 카메라와 캐릭터 사이를 가리는 나무·집은 반투명하게
+    // 카메라와 캐릭터 사이를 가리는 나무·집은 반투명하게 (태블릿 저부하 최적화)
     const ray = new THREE.Raycaster();
+    const _occHead = new THREE.Vector3();
+    const _occDir = new THREE.Vector3();
+    let occTick = 0;
     function updateOcclusion() {
-      fadeables.forEach(f => f.userData.want = 1);
-      const head = new THREE.Vector3(P.pos.x, P.pos.y + 1, P.pos.z);
-      const dir = head.clone().sub(camera.position), dist = dir.length();
-      ray.set(camera.position, dir.normalize()); ray.far = dist - .6;
-      const hits = ray.intersectObjects(fadeables.filter(f => f.visible && (!f.parent || f.parent.visible !== false)).map(f => f.userData.meshes).flat(), false);
-      hits.forEach(h => { h.object.userData.owner.userData.want = .25; });
-      // 캐릭터 바로 옆 나무도 살짝 비침
+      if (++occTick % 3 === 0) {
+        fadeables.forEach(f => f.userData.want = 1);
+        _occHead.set(P.pos.x, P.pos.y + 1, P.pos.z);
+        _occDir.subVectors(_occHead, camera.position);
+        const dist = _occDir.length();
+        ray.set(camera.position, _occDir.normalize());
+        ray.far = dist - .6;
+        const targets = [];
+        for (let i = 0; i < fadeables.length; i++) {
+          const f = fadeables[i];
+          if (f.visible && (!f.parent || f.parent.visible !== false)) {
+            const ms = f.userData.meshes;
+            for (let j = 0; j < ms.length; j++) targets.push(ms[j]);
+          }
+        }
+        const hits = ray.intersectObjects(targets, false);
+        hits.forEach(h => {
+          if (h.object.userData.owner) h.object.userData.owner.userData.want = .25;
+        });
+      }
+      // 부드러운 투명도 보간
       fadeables.forEach(f => {
         const o = f.userData;
-        o.cur = (o.cur ?? 1) + (o.want - (o.cur ?? 1)) * .25;
-        o.meshes.forEach(m => { m.material.transparent = o.cur < .99; m.material.opacity = o.cur; m.material.depthWrite = o.cur > .9; });
+        const prev = o.cur ?? 1;
+        o.cur = prev + (o.want - prev) * .25;
+        if (Math.abs(o.cur - prev) > 0.005) {
+          o.meshes.forEach(m => {
+            m.material.transparent = o.cur < .99;
+            m.material.opacity = o.cur;
+            m.material.depthWrite = o.cur > .9;
+          });
+        }
       });
     }
     function makeFadeable(group) {
@@ -4232,41 +4261,51 @@
       // ──────── 2. 대운동장 관람석 (견고하고 자연스러운 입체 트러스 & 지지대 기둥) ────────
       const bleacher = new THREE.Group();
       bleacher.position.set(Z.x, 0, Z.z + 8.5);
+      // 3단 좌석 벤치 (각 단 높이 0.4m, 깊이 0.88m로 의자 간 간격 및 비례 최적화)
       [0, 1, 2].forEach(step => {
-        const bench = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.45, 1.0), std(0x0044FF, { roughness: 0.6 }));
-        bench.position.set(0, 0.25 + step * 0.45, step * 0.9); bench.castShadow = true; bleacher.add(bench);
+        const bench = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.40, 0.88), std(0x0044FF, { roughness: 0.6 }));
+        bench.position.set(0, 0.20 + step * 0.40, step * 0.9);
+        bench.castShadow = true;
+        bleacher.add(bench);
       });
 
-      // 후면 메인 수직 지지 기둥 5개 & 대각선 버트레스 지지대
+      // 후면 메인 수직 지지 기둥 5개 & 안전 난간 & 후면 경사 버트레스 지지대
       const frameMat = std(0x334155, { roughness: 0.4, metalness: 0.6 });
       [-3.6, -1.8, 0, 1.8, 3.6].forEach(px => {
-        // 수직 기둥
-        const vPost = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.45, 8), frameMat);
-        vPost.position.set(px, 0.725, 2.3); vPost.castShadow = true; bleacher.add(vPost);
+        // 수직 기둥 (좌석 뒷면 z=2.35에 정확히 배치되어 의자 위로 튀어나오지 않음)
+        const vPost = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1.25, 8), frameMat);
+        vPost.position.set(px, 0.625, 2.35); vPost.castShadow = true; bleacher.add(vPost);
 
-        // 후면 대각선 경사 지지대 (삼각형 안정 구조)
-        const dStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.65, 8), frameMat);
-        dStrut.position.set(px, 0.65, 2.75); dStrut.rotation.x = -0.55; dStrut.castShadow = true; bleacher.add(dStrut);
+        // 후면 대각선 경사 지지대 (지면 z=3.25에서 수직기둥 z=2.35 상단으로 연결되어 의자 뒤편 지지)
+        const dStrut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.46, 8), frameMat);
+        dStrut.position.set(px, 0.575, 2.80); dStrut.rotation.x = -0.66; dStrut.castShadow = true; bleacher.add(dStrut);
 
-        // 각 단 하부를 단단히 받쳐주는 경사형 하부 빔
-        const underBeam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 2.4), frameMat);
-        underBeam.position.set(px, 0.42, 0.9); underBeam.rotation.x = 0.42; bleacher.add(underBeam);
+        // 각 단 하부를 완벽하게 받쳐주는 전진형 경사 지지 빔 (의자 아래 하부에 위치)
+        const underBeam = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 2.42), frameMat);
+        underBeam.position.set(px, 0.40, 1.10); underBeam.rotation.x = -0.38; bleacher.add(underBeam);
 
         // 후면 안전 난간 수직 기둥
-        const railPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.85, 8), frameMat);
-        railPost.position.set(px, 1.8, 2.3); railPost.castShadow = true; bleacher.add(railPost);
+        const railPost = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 8), frameMat);
+        railPost.position.set(px, 1.675, 2.35); railPost.castShadow = true; bleacher.add(railPost);
       });
 
-      // 후면 2단 수평 안전 가드레일 (관람객 보호 핸드레일)
-      [1.7, 2.18].forEach(ry => {
+      // 후면 2단 수평 안전 가드레일 (좌석 뒤편 z=2.35)
+      [1.65, 2.10].forEach(ry => {
         const hRail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 8.2, 8), std(0xE2E8F0, { metalness: 0.7 }));
-        hRail.rotation.z = Math.PI / 2; hRail.position.set(0, ry, 2.3); bleacher.add(hRail);
+        hRail.rotation.z = Math.PI / 2; hRail.position.set(0, ry, 2.35); bleacher.add(hRail);
       });
 
-      // 좌우 측면 마감 트러스 프레임
-      [-3.98, 3.98].forEach(sx => {
-        const sideFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.35, 2.4), frameMat);
-        sideFrame.position.set(sx, 0.68, 1.0); sideFrame.rotation.x = 0.42; bleacher.add(sideFrame);
+      // 좌우 측면 마감 트러스 프레임 및 각 단 하부 지지대
+      [-4.01, 4.01].forEach(sx => {
+        const sideFrame = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 2.42), frameMat);
+        sideFrame.position.set(sx, 0.40, 1.10); sideFrame.rotation.x = -0.38; bleacher.add(sideFrame);
+
+        [0, 1, 2].forEach(step => {
+          const legH = 0.20 + step * 0.40;
+          const sLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, legH, 8), frameMat);
+          sLeg.position.set(sx, legH / 2, step * 0.9);
+          bleacher.add(sLeg);
+        });
       });
 
       stage2Group.add(bleacher);
@@ -4591,20 +4630,73 @@
       const slideGroup = new THREE.Group();
       slideGroup.position.set(Z.x + 5.5, 0, Z.z + 2.0);
 
-      const tower1 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 4.8, 3.0), std(0xD97706, { roughness: 0.8 }));
-      tower1.position.y = 2.4; tower1.castShadow = true; slideGroup.add(tower1);
-      const towerRoof1 = new THREE.Mesh(new THREE.ConeGeometry(2.4, 2.0, 4), std(0xEF4444));
-      towerRoof1.position.y = 5.8; towerRoof1.rotation.y = Math.PI / 4; towerRoof1.castShadow = true; slideGroup.add(towerRoof1);
+      // 1) 4개 메인 원목 기둥 (놀이터 타워 기둥)
+      const postMat = std(0xD97706, { roughness: 0.7 });
+      [-1.2, 1.2].forEach(px => {
+        [-1.2, 1.2].forEach(pz => {
+          const post = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 4.3, 8), postMat);
+          post.position.set(px, 2.15, pz); post.castShadow = true; slideGroup.add(post);
+        });
+      });
 
-      const slideChute = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.3, 6.5), std(0xFACC15, { roughness: 0.3 }));
-      slideChute.position.set(0, 1.8, 4.2); slideChute.rotation.x = -0.52; slideChute.castShadow = true;
-      slideGroup.add(slideChute);
+      // 2) 2층 전망 플랫폼 데크 (높이 2.4m)
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.18, 2.5), std(0xB45309, { roughness: 0.6 }));
+      deck.position.set(0, 2.4, 0); deck.castShadow = true; slideGroup.add(deck);
 
-      const stairs = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.25, 3.4), std(0x2563EB));
-      stairs.position.set(0, 1.4, -2.4); stairs.rotation.x = 0.55; slideGroup.add(stairs);
+      // 3) 요새 지붕 (원뿔/피라미드 루프)
+      const towerRoof1 = new THREE.Mesh(new THREE.ConeGeometry(2.2, 1.6, 4), std(0xEF4444));
+      towerRoof1.position.y = 4.9; towerRoof1.rotation.y = Math.PI / 4; towerRoof1.castShadow = true; slideGroup.add(towerRoof1);
+
+      // 4) 플랫폼 좌우 안전 가드레일 & 전면 입구 안전 아치 바
+      const railMat = std(0xFDE047);
+      [-1.25, 1.25].forEach(sx => {
+        const sideRail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.8, 2.4), std(0x0284C7, { roughness: 0.5 }));
+        sideRail.position.set(sx, 2.85, 0); slideGroup.add(sideRail);
+      });
+      const frontArch = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.8, 8), railMat);
+      frontArch.rotation.z = Math.PI / 2; frontArch.position.set(0, 3.25, 1.2); slideGroup.add(frontArch);
+
+      // 5) 미끄럼틀 슬라이드 본체: 플랫폼(z=1.15, y=2.4)에서 지면(z=6.2, y=0.12)으로 자연스러운 하향 경사 활강!
+      const chuteBed = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.12, 5.54), std(0xFACC15, { roughness: 0.2 }));
+      chuteBed.position.set(0, 1.26, 3.675); chuteBed.rotation.x = 0.424; chuteBed.castShadow = true;
+      slideGroup.add(chuteBed);
+
+      // 슬라이드 좌우 안전 사이드 가드 레일 (U자형 미끄럼틀 채널)
+      const railChuteMat = std(0xEF4444, { roughness: 0.3 });
+      [-0.68, 0.68].forEach(rx => {
+        const sRail = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.42, 5.54), railChuteMat);
+        sRail.position.set(rx, 1.40, 3.675); sRail.rotation.x = 0.424; sRail.castShadow = true;
+        slideGroup.add(sRail);
+      });
+
+      // 슬라이드 중간 지지대 다리 (z=3.68 하부 지지 기둥)
+      [-0.55, 0.55].forEach(bx => {
+        const chuteLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.26, 8), postMat);
+        chuteLeg.position.set(bx, 0.63, 3.68); chuteLeg.castShadow = true; slideGroup.add(chuteLeg);
+      });
+
+      // 슬라이드 지면 착지 안전 매트
+      const landingMat = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.12, 1.2), std(0x10B981, { roughness: 0.5 }));
+      landingMat.position.set(0, 0.06, 6.45); landingMat.castShadow = true; slideGroup.add(landingMat);
+
+      // 6) 후면 오르막 계단 세트 (지면 z=-3.2, y=0에서 플랫폼 z=-1.15, y=2.4로 올라가는 사다리/계단)
+      const stairMat = std(0x2563EB, { roughness: 0.5 });
+      [-0.7, 0.7].forEach(sx => {
+        const stringer = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 3.16), stairMat);
+        stringer.position.set(sx, 1.20, -2.175); stringer.rotation.x = -0.864; stringer.castShadow = true;
+        slideGroup.add(stringer);
+      });
+      // 6개 계단 발판
+      for (let i = 0; i < 6; i++) {
+        const ratio = (i + 0.5) / 6;
+        const stepY = 0.18 + ratio * 2.12;
+        const stepZ = -3.10 + ratio * 1.85;
+        const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.10, 0.30), std(0xF97316));
+        stepMesh.position.set(0, stepY, stepZ); stepMesh.castShadow = true; slideGroup.add(stepMesh);
+      }
 
       stage3Group.add(slideGroup);
-      stage3Boxes.push({ minx: Z.x + 3.2, maxx: Z.x + 7.8, minz: Z.z - 0.5, maxz: Z.z + 7.8, top: 6.2 });
+      stage3Boxes.push({ minx: Z.x + 5.5 - 1.3, maxx: Z.x + 5.5 + 1.3, minz: Z.z + 2.0 - 1.3, maxz: Z.z + 2.0 + 1.3, top: 2.4 });
 
       // ──────── 3. 점프 파크: 그네 세트, 시소, 정글짐, V자 대칭 통통 튀는 발판 ────────
       const swingGroup = new THREE.Group();
@@ -6020,8 +6112,8 @@
         // 하: 원어 보고 뜻 맞히기, 우리말 보고 원어 맞히기, 한글 발음 매칭, OX 퀴즈
         allowedTypes = ["orig2kor", "kor2orig", "pron", "ox"];
       } else if (diff === "mid") {
-        // 중: 설명/뜻풀이로 원어 찾기, 일상 대화 상황 빈칸, 어휘의 쓰임/의미, 주제 영역 분류
-        allowedTypes = ["def", "dialogue", "mean", "cat"];
+        // 중: 설명/뜻풀이로 원어 찾기, 일상 대화 상황 빈칸, 어휘의 쓰임/의미
+        allowedTypes = ["def", "dialogue", "mean"];
       } else {
         // 상: 심화 학교 생활 상황 추론, 3개국 같은 뜻 표현 비교, 고난도 심화 쓰임 탐구
         allowedTypes = ["scenario", "cross_lang", "adv_def"];
@@ -6032,7 +6124,7 @@
       card.lastType = t;
 
       const q = {
-        hint: `발음: [${w.pron}] / 뜻 초성: ${chosung(w.kor)}`,
+        hint: `발음 초성: [${chosung(w.pron)}] / 뜻: ${w.kor}`,
         word: w.disp,
         diff: diff,
         mean: `${w.orig} (${w.pron}) : ${w.kor} — ${w.mean}`
@@ -6099,19 +6191,6 @@
             prompt: `<b>[${langName}]</b> <b>'${esc(w.orig)}' (${esc(w.pron)})</b>의<br>쓰임으로 가장 알맞은 것은?`,
             options: opts(w.mean, pickDistractors("mean", 3, false), "mean")
           };
-
-        case "cat": {
-          const catList = ["인사 및 예절", "학교 및 교실 생활", "친구 및 놀이", "감정 및 신체", "숫자 및 시간", "일상 및 사물"];
-          const wrongCats = shuffle(catList.filter(c => c !== w.cat)).slice(0, 3);
-          return {
-            ...q,
-            prompt: `<b>[${langName}]</b> <b>'${esc(w.orig)}' (${esc(w.kor)})</b>은/는<br>어떤 주제 영역에 속하는 낱말일까요?`,
-            options: shuffle([
-              { label: w.cat, ok: true },
-              ...wrongCats.map(c => ({ label: c, ok: false }))
-            ])
-          };
-        }
 
         // [상 난이도 유형]
         case "scenario":

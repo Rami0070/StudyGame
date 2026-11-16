@@ -53,12 +53,12 @@
     .overlay { z-index: 40; } #charSelectModal, #resultModal { z-index: 50; } #pauseModal { z-index: 60; }
     .art img, .art svg { width: 100%; height: 100%; display: block; object-fit: contain; }
 
-    /* 하늘 장식 (시작 화면) */
-    .cloud { position: absolute; background: #fff; border-radius: 999px; opacity: .9; }
+    /* 하늘 & 산 배경 장식 (시작 화면) */
+    .cloud { position: fixed; background: #fff; border-radius: 999px; opacity: .9; pointer-events: none; z-index: 0; }
     .cloud::before, .cloud::after { content: ""; position: absolute; background: #fff; border-radius: 50%; }
     .cloud::before { width: 55%; height: 160%; left: 15%; top: -70%; }
     .cloud::after { width: 40%; height: 120%; right: 12%; top: -45%; }
-    .hills { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; }
+    .hills { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: clamp(220px, 34vh, 380px); pointer-events: none; z-index: 0; }
 
     /* 시작 화면 */
     #charSelectModal { background: linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 75%); flex-direction: column; justify-content: flex-start; gap: 18px; }
@@ -235,7 +235,11 @@
   <div id="charSelectModal" class="overlay" style="display:flex">
     <div class="cloud" style="width:180px;height:56px;left:6%;top:9%"></div>
     <div class="cloud" style="width:130px;height:42px;right:9%;top:16%"></div>
-    <svg class="hills" viewBox="0 0 1200 200" preserveAspectRatio="none" aria-hidden="true"><path d="M0 120 Q200 40 420 110 T820 90 T1200 100 V200 H0Z" fill="#9BE08A"/><path d="M0 160 Q300 90 600 150 T1200 140 V200 H0Z" fill="#7BD36B"/></svg>
+    <svg class="hills" viewBox="0 0 1440 320" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0,170 C120,100 220,40 360,75 C480,105 580,165 720,150 C860,135 960,70 1100,55 C1240,40 1340,90 1440,120 V320 H0 Z" fill="#A8E8B4"/>
+      <path d="M0,210 C140,150 260,95 420,125 C560,150 680,205 840,180 C980,155 1100,100 1260,115 C1360,125 1410,160 1440,180 V320 H0 Z" fill="#88D775"/>
+      <path d="M0,250 C160,200 280,150 460,175 C620,195 740,240 920,220 C1080,200 1220,160 1360,185 C1410,195 1430,210 1440,225 V320 H0 Z" fill="#5EBF46"/>
+    </svg>
     <div class="logo"><span class="art" data-art="compass" style="width:84px;height:84px"></span><h1>지식 탐험대</h1></div>
     <div class="panel start-card">
       <div class="step-title"><b>1</b>어디로 갈까?</div>
