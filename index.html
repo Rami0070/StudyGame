@@ -393,7 +393,7 @@
     .pill.big { font-size: 34px; padding: 6px 22px 6px 10px; }
     #comboBadge { position: absolute; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 74px); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 11; background: var(--tomato); color: #fff; font-size: 26px; padding: 6px 18px; border-radius: 999px; box-shadow: 0 5px 0 var(--tomato-d); transform-origin: right center; }
     #comboBadge.bump { animation: pop .4s cubic-bezier(.2, 1.8, .4, 1); }
-    #radarWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 50%; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
+    #radarWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(26px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 50%; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
     #radar { display: block; width: 150px; height: 150px; border-radius: 50%; }
     @media (pointer: coarse) { #radar { width: 116px; height: 116px; } }
     #joyZone { position: absolute; left: 0; top: 0; width: 68%; height: 100%; z-index: 15; display: none; touch-action: none; user-select: none; -webkit-user-select: none; }
@@ -510,6 +510,24 @@
     .emo { flex-direction: column; width: 88px; min-height: 92px; padding: 6px; font-size: 18px; gap: 0; border-radius: 22px; }
     .emo span { font-size: 40px; line-height: 1.1; }
     #app:not(.play) #emoteBtn, #app:not(.play) #emoteMenu { display: none !important; }
+
+    /* 화면 우측 하단 크레딧 */
+    .screen-credit {
+      position: fixed;
+      right: max(16px, env(safe-area-inset-right, 0px));
+      bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      color: rgba(30, 41, 59, 0.4);
+      text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      z-index: 55;
+      white-space: nowrap;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -676,6 +694,7 @@
   </div>
 
   <div id="loadingScreen"><span class="art" data-art="compass"></span>섬을 만드는 중…</div>
+  <div class="screen-credit">Designed by Rami since 2026</div>
 </div>
 
   <script>
