@@ -107,7 +107,7 @@
     .pill svg { width: 40px; height: 40px; }
     .hud-right { display: flex; gap: 12px; align-items: center; }
     .notice { position: absolute; left: 50%; transform: translateX(-50%); bottom: max(22px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: rgba(255,255,255,.95); border-radius: 999px; padding: 10px 22px; font-size: 22px; box-shadow: 0 5px 0 rgba(0,0,0,.08); pointer-events: none; max-width: calc(100% - 440px); text-align: center; }
-    @media (max-width: 900px) { .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); max-width: calc(100% - 32px); font-size: 18px; } }
+    @media (max-width: 900px) { .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); max-width: calc(100% - 160px); font-size: 18px; } }
     #minimapWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 22px; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
     #minimap { display: block; width: 168px; height: 136px; border-radius: 14px; }
     #dpad { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); bottom: max(16px, env(safe-area-inset-bottom, 0px)); z-index: 20; display: none; grid-template-columns: repeat(3, 76px); grid-template-rows: repeat(3, 76px); gap: 6px; }
@@ -391,11 +391,11 @@
     .stage-banner-title { margin: 0; font-size: clamp(48px, 9vw, 84px); color: #FF5722; -webkit-text-stroke: 3px #fff; paint-order: stroke fill; text-shadow: 0 6px 0 rgba(0, 0, 0, 0.15); white-space: nowrap; }
     @keyframes bannerPop { 0% { opacity: 0; transform: translate(-50%, -40%) scale(0.5); } 14% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 24% { transform: translate(-50%, -50%) scale(1); } 78% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(0.85); } }
     .pill.big { font-size: 34px; padding: 6px 22px 6px 10px; }
-    #comboBadge { position: absolute; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 74px); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 11; background: var(--tomato); color: #fff; font-size: 26px; padding: 6px 18px; border-radius: 999px; box-shadow: 0 5px 0 var(--tomato-d); transform-origin: right center; }
+    #comboBadge { position: absolute; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 74px); right: calc(max(16px, env(safe-area-inset-right, 0px)) + 144px); z-index: 11; background: var(--tomato); color: #fff; font-size: 24px; padding: 6px 18px; border-radius: 999px; box-shadow: 0 5px 0 var(--tomato-d); transform-origin: right center; white-space: nowrap; }
     #comboBadge.bump { animation: pop .4s cubic-bezier(.2, 1.8, .4, 1); }
-    #radarWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); bottom: max(26px, env(safe-area-inset-bottom, 0px)); z-index: 10; background: #fff; padding: 8px; border-radius: 50%; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
-    #radar { display: block; width: 150px; height: 150px; border-radius: 50%; }
-    @media (pointer: coarse) { #radar { width: 116px; height: 116px; } }
+    #radarWrap { position: absolute; right: max(16px, env(safe-area-inset-right, 0px)); top: calc(max(14px, env(safe-area-inset-top, 0px)) + 74px); bottom: auto; z-index: 12; background: #fff; padding: 6px; border-radius: 50%; box-shadow: 0 6px 0 rgba(0,0,0,.1); }
+    #radar { display: block; width: 124px; height: 124px; border-radius: 50%; }
+    @media (pointer: coarse) { #radar { width: 112px; height: 112px; } #comboBadge { right: calc(max(16px, env(safe-area-inset-right, 0px)) + 128px); font-size: 20px; } }
     #joyZone { position: absolute; left: 0; top: 0; width: 68%; height: 100%; z-index: 15; display: none; touch-action: none; user-select: none; -webkit-user-select: none; }
     #joyBase { position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.45); border: 4px solid rgba(255,255,255,.9); box-shadow: 0 8px 24px rgba(0,0,0,.15); transform: translate(-50%, 50%); left: 110px; bottom: 100px; top: auto; pointer-events: none; opacity: .65; transition: opacity .2s ease; }
     #joyKnob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: var(--sea); box-shadow: 0 5px 0 var(--sea-d); pointer-events: none; }
@@ -518,15 +518,16 @@
     body.touch-device #joyZone { display: block !important; }
     body.touch-device #jumpBtn { display: flex !important; }
     body.touch-device #dashBtn { display: flex !important; }
-    body.touch-device .notice { bottom: auto !important; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px) !important; }
+    body.touch-device .notice { bottom: auto !important; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px) !important; max-width: calc(100% - 160px) !important; }
     body.touch-device #rightControls {
       top: auto !important;
       transform: none !important;
       bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 18px) !important;
       gap: 12px !important;
     }
-    /* radar on bottom */
-    body.touch-device #radar { width: 116px; height: 116px; }
+    /* radar top-right */
+    body.touch-device #radar { width: 112px; height: 112px; }
+    body.touch-device #comboBadge { right: calc(max(16px, env(safe-area-inset-right, 0px)) + 128px); font-size: 20px; }
 
     .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .mode { flex-direction: column; min-height: 130px; font-size: 32px; border-radius: 30px; gap: 4px; }
