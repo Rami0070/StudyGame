@@ -465,11 +465,66 @@
       border-color: #FFFFFF;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28), inset 0 2px 6px rgba(255, 255, 255, 0.8);
     }
+    #dashBtn {
+      position: relative;
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      background: linear-gradient(135deg, rgba(255, 122, 0, 0.92), rgba(255, 61, 0, 0.92));
+      border: 3.5px solid rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 24px rgba(255, 87, 34, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.08s ease, box-shadow 0.08s ease;
+      color: #FFFFFF;
+      padding: 0;
+      flex: none;
+    }
+    #dashBtn .dash-txt {
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Jua', 'BMJUA', sans-serif;
+      color: #FFFFFF;
+      line-height: 1;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+      letter-spacing: 0.5px;
+    }
+    #dashBtn:active, #dashBtn.active {
+      transform: translateY(4px) scale(0.95);
+      background: linear-gradient(135deg, rgba(255, 61, 0, 0.98), rgba(216, 27, 96, 0.98));
+      border-color: #FFE066;
+      box-shadow: 0 4px 16px rgba(255, 87, 34, 0.55), inset 0 2px 6px rgba(255, 255, 255, 0.85);
+    }
 
-    @media (pointer: coarse) { #joyZone { display: block; } #jumpBtn { display: flex; } .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); } }
+    @media (pointer: coarse) {
+      #joyZone { display: block; }
+      #jumpBtn { display: flex; }
+      #dashBtn { display: flex; }
+      .notice { bottom: auto; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px); }
+      #rightControls {
+        top: auto;
+        transform: none;
+        bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 18px);
+        gap: 12px;
+      }
+    }
     body.touch-device #joyZone { display: block !important; }
     body.touch-device #jumpBtn { display: flex !important; }
+    body.touch-device #dashBtn { display: flex !important; }
     body.touch-device .notice { bottom: auto !important; top: calc(max(14px, env(safe-area-inset-top, 0px)) + 78px) !important; }
+    body.touch-device #rightControls {
+      top: auto !important;
+      transform: none !important;
+      bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 18px) !important;
+      gap: 12px !important;
+    }
     /* radar on bottom */
     body.touch-device #radar { width: 116px; height: 116px; }
 
@@ -501,7 +556,7 @@
     #bookScroll { overflow-y: auto; display: grid; gap: 12px; padding-right: 4px; }
     .overlay { z-index: 40; } #startModal, #resultModal { z-index: 50; } #pauseModal, #bookModal { z-index: 60; }
     .toast { bottom: auto !important; top: calc(86px + env(safe-area-inset-top, 0px)); }
-    #app:not(.play) .hud, #app:not(.play) #radarWrap, #app:not(.play) #noticeBox, #app:not(.play) #joyZone, #app:not(.play) #jumpBtn, #app:not(.play) #comboBadge, #app:not(.play) #rightControls { display: none !important; }
+    #app:not(.play) .hud, #app:not(.play) #radarWrap, #app:not(.play) #noticeBox, #app:not(.play) #joyZone, #app:not(.play) #jumpBtn, #app:not(.play) #dashBtn, #app:not(.play) #comboBadge, #app:not(.play) #rightControls { display: none !important; }
     /* 감정표현 */
     /* emote button inside rightControls */
 
@@ -569,6 +624,15 @@
       </svg>
       <span class="jump-txt">점프</span>
     </button>
+    <button type="button" id="dashBtn" aria-label="대쉬">
+      <svg viewBox="0 0 64 64" width="44" height="44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <path d="M12 24 L36 24 L24 42 L48 42" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M8 33 L20 33" stroke="#FFE066" stroke-width="3.5" stroke-linecap="round" />
+        <path d="M40 18 L56 18" stroke="#FFE066" stroke-width="3.5" stroke-linecap="round" />
+        <path d="M28 50 L46 50" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      </svg>
+      <span class="dash-txt">대쉬</span>
+    </button>
   </div>
   <div id="emoteMenu" class="hidden" role="menu" aria-label="감정표현 고르기">
     <button type="button" class="jelly white emo" onclick="emote('wave')"><span>👋</span>안녕</button>
@@ -618,7 +682,7 @@
           <button type="button" class="jelly white" id="homeSoundBtn" onclick="toggleSound()" style="font-size:20px;min-height:56px;padding:10px 18px" aria-label="효과음 켜기/끄기">🔊 효과음 켜짐</button>
           <a href="admin.html" class="jelly white" style="text-decoration:none;font-size:18px;min-height:56px;padding:10px 18px;display:inline-flex;align-items:center;gap:6px;" title="선생님 관리자 대시보드">🎓 관리자</a>
         </div>
-        <span class="small" style="color:var(--ink-soft);font-size:14px">키보드: WASD/방향키 이동 · 스페이스 점프 | 태블릿: 화면 터치 밀기 이동 · 점프 버튼</span>
+        <span class="small" style="color:var(--ink-soft);font-size:14px">키보드: WASD/방향키 이동 · 스페이스 점프 · Shift 대쉬 | 태블릿: 화면 터치 조작 · 점프/대쉬 버튼</span>
       </div>
     </div>
   </div>
@@ -1079,10 +1143,10 @@
     /* ───────────── 상태 ───────────── */
     const G = {
       mode: "free", hero: load().hero || "explorer", customName: load().customHeroName || "", soundOn: load().soundOn !== false,
-      playing: false, paused: true, score: 0, combo: 0, got: 0, total: 30, stage: 1, stageGot: 0, time: 0, totalWrongAttempts: 0,
+      playing: false, paused: true, score: 0, combo: 0, got: 0, total: 30, stage: 1, stageGot: 0, stageHintsRemaining: 5, time: 0, totalWrongAttempts: 0,
       cards: [], activeCard: null, attempts: 0, hintUsed: false, locked: false, missed: new Set(), learned: []
     };
-    const P = { pos: new THREE.Vector3(0, 0, 4), vy: 0, onGround: true, face: Math.PI, moving: false, jumpQueued: false };
+    const P = { pos: new THREE.Vector3(0, 0, 4), vy: 0, onGround: true, face: Math.PI, moving: false, jumpQueued: false, isDashing: false };
     const input = { keys: {}, jx: 0, jy: 0 };
     let camYaw = 0, camPitch = 0.5, camDist = 9;
 
@@ -1182,7 +1246,7 @@
     const fadeables = [];   // 카메라를 가리면 반투명해지는 물체
     const critters = [];    // 나비
     const clouds = [];
-    let seaGeo = null, foam = null, dustTimer = 0, waterTimer = 0, villageLakeMesh = null;
+    let seaGeo = null, foam = null, dustTimer = 0, waterTimer = 0, villageLakeMesh = null, isTouch = false;
     const zoneSignBoards = [];
     const setSRGB = tex => { tex.encoding = THREE.sRGBEncoding; return tex; };
     const guideDots = [];
@@ -1190,19 +1254,20 @@
 
     function initThree() {
       const box = $("gameViewport");
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+      isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
       scene = new THREE.Scene();
       scene.fog = new THREE.Fog(lin(0xE6F4FF), 100, 260);
       camera = new THREE.PerspectiveCamera(50, box.clientWidth / box.clientHeight, 0.1, 400);
-      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouch ? 1.35 : 1.75));
+      renderer = new THREE.WebGLRenderer({ antialias: !isTouch, powerPreference: "high-performance" });
+      const targetDpr = isTouch ? Math.min(window.devicePixelRatio, 1.0) : Math.min(window.devicePixelRatio, 1.75);
+      renderer.setPixelRatio(targetDpr);
       renderer.setSize(box.clientWidth, box.clientHeight);
       renderer.outputEncoding = THREE.sRGBEncoding;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.05;
       
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = isTouch ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = isTouch ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
       box.appendChild(renderer.domElement);
 
       // 부드러운 햇살과 구름빛이 감도는 따뜻한 하늘 돔
@@ -1227,11 +1292,14 @@
       scene.add(hemiLight);
       sun = new THREE.DirectionalLight(lin(0xFFF0D6), 0.75);
       sun.castShadow = true;
-      const shadowRes = isTouch ? 1024 : 2048;
+      const shadowRes = isTouch ? 512 : 2048;
       sun.shadow.mapSize.set(shadowRes, shadowRes);
-      sun.shadow.radius = isTouch ? 2.5 : 5.5;
+      sun.shadow.radius = isTouch ? 1.0 : 5.5;
       sun.shadow.bias = -0.0004;
-      Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 55, bottom: -55, near: 1, far: 180 });
+      const shadowCamBounds = isTouch
+        ? { left: -32, right: 32, top: 32, bottom: -32, near: 1, far: 140 }
+        : { left: -55, right: 55, top: 55, bottom: -55, near: 1, far: 180 };
+      Object.assign(sun.shadow.camera, shadowCamBounds);
       scene.add(sun); scene.add(sun.target);
 
       stage1Group = new THREE.Group(); scene.add(stage1Group);
@@ -1331,7 +1399,7 @@
       scene.add(pinTarget);
 
       pinSpotlight = new THREE.SpotLight(0xFFFFFF, 0, 36, Math.PI / 6.5, 0.35, 1.1);
-      pinSpotlight.castShadow = true;
+      pinSpotlight.castShadow = false;
       pinSpotlight.shadow.mapSize.set(1024, 1024);
       pinSpotlight.shadow.bias = -0.0003;
       pinSpotlight.target = pinTarget;
@@ -1684,7 +1752,8 @@
     let seaTick = 0;
     // 매 프레임: 바다 물결, 거품, 나무 흔들림, 나비, 구름
     function updateWorld(t, dt) {
-      if (seaGeo && (++seaTick % 2 === 0)) {
+      const seaInterval = isTouch ? 8 : 2;
+      if (seaGeo && (++seaTick % seaInterval === 0)) {
         const p = seaGeo.attributes.position, base = seaGeo.userData.base;
         for (let i = 0; i < p.count; i++) {
           const x = base[i * 3], z = base[i * 3 + 2];
@@ -1694,7 +1763,16 @@
       }
       if (foam) { foam.material.opacity = .4 + Math.sin(t * 1.6) * .18; const s = 1 + Math.sin(t * 1.6) * .012; foam.scale.set(s, s, s); }
       if (villageLakeMesh) { villageLakeMesh.position.y = 0.04 + Math.sin(t * 2.2) * 0.008; }
-      trees.forEach((tr, i) => { tr.rotation.z = Math.sin(t * 1.3 + i) * .025; tr.rotation.x = Math.cos(t * 1.1 + i * .7) * .02; });
+      const treeCount = trees.length;
+      for (let i = 0; i < treeCount; i++) {
+        const tr = trees[i];
+        if (isTouch) {
+          const dx = tr.position.x - P.pos.x, dz = tr.position.z - P.pos.z;
+          if (dx * dx + dz * dz > 400) continue; // 태블릿 최적화: 20m 밖 나무는 회전 연산 생략
+        }
+        tr.rotation.z = Math.sin(t * 1.3 + i) * .025;
+        tr.rotation.x = Math.cos(t * 1.1 + i * .7) * .02;
+      }
       critters.forEach(b => {
         const u = b.userData, a = t * u.sp + u.ph;
         b.position.set(u.cx + Math.cos(a) * u.rad, 1 + Math.sin(a * 2.3) * .4, u.cz + Math.sin(a) * u.rad);
@@ -1753,7 +1831,8 @@
     const _occDir = new THREE.Vector3();
     let occTick = 0;
     function updateOcclusion() {
-      if (++occTick % 3 === 0) {
+      const occInterval = isTouch ? 8 : 3;
+      if (++occTick % occInterval === 0) {
         fadeables.forEach(f => f.userData.want = 1);
         _occHead.set(P.pos.x, P.pos.y + 1, P.pos.z);
         _occDir.subVectors(_occHead, camera.position);
@@ -1764,32 +1843,42 @@
         for (let i = 0; i < fadeables.length; i++) {
           const f = fadeables[i];
           if (f.visible && (!f.parent || f.parent.visible !== false)) {
+            // 태블릿 최적화: 플레이어 20m 밖의 먼 물체는 레이캐스트 대상에서 제외
+            const dx = f.position.x - P.pos.x, dz = f.position.z - P.pos.z;
+            if (dx * dx + dz * dz > 400) continue;
             const ms = f.userData.meshes;
             for (let j = 0; j < ms.length; j++) targets.push(ms[j]);
           }
         }
-        const hits = ray.intersectObjects(targets, false);
-        hits.forEach(h => {
-          if (h.object.userData.owner) h.object.userData.owner.userData.want = .25;
-        });
+        if (targets.length > 0) {
+          const hits = ray.intersectObjects(targets, false);
+          hits.forEach(h => {
+            if (h.object.userData.owner) h.object.userData.owner.userData.want = .25;
+          });
+        }
       }
-      // 부드러운 투명도 보간
+      // 부드러운 투명도 보간 (런타임 material.transparent 토글 금지로 셰이더 재컴파일 렉 원천 차단)
       fadeables.forEach(f => {
         const o = f.userData;
         const prev = o.cur ?? 1;
         o.cur = prev + (o.want - prev) * .25;
         if (Math.abs(o.cur - prev) > 0.005) {
           o.meshes.forEach(m => {
-            m.material.transparent = o.cur < .99;
-            m.material.opacity = o.cur;
-            m.material.depthWrite = o.cur > .9;
+            if (m.material) m.material.opacity = o.cur;
           });
         }
       });
     }
     function makeFadeable(group) {
       const meshes = [];
-      group.traverse(o => { if (o.isMesh) { meshes.push(o); o.userData.owner = group; } });
+      group.traverse(o => {
+        if (o.isMesh) {
+          meshes.push(o);
+          o.userData.owner = group;
+          // 미리 투명도 조절이 가능하도록 설정하여 런타임 셰이더 재컴파일 렉 완전 방지
+          if (o.material) o.material.transparent = true;
+        }
+      });
       group.userData.meshes = meshes;
       fadeables.push(group);
     }
@@ -5971,6 +6060,7 @@
       }
       G.stage = stageNum;
       G.stageGot = 0;
+      G.stageHintsRemaining = 5;
       setStageVisuals(stageNum);
       // 스테이지가 변경될 때마다 캐릭터가 중앙 광장에서 정면을 보며 시작
       P.pos.set(0, 0, 3.2);
@@ -6292,7 +6382,18 @@
       $("quizFeedback").classList.add("hidden");
       const qb = document.querySelector(".quiz-bottom");
       if (qb) qb.classList.remove("hidden");
-      $("quizHintBtn").disabled = false; $("quizHintBtn").style.opacity = 1;
+      const hintBtn = $("quizHintBtn");
+      if (hintBtn) {
+        if (G.stageHintsRemaining > 0) {
+          hintBtn.disabled = false;
+          hintBtn.style.opacity = 1;
+          hintBtn.innerHTML = `<span class="art" data-art="bulb" style="width:28px;height:28px"></span>힌트 (${G.stageHintsRemaining}/5)`;
+        } else {
+          hintBtn.disabled = true;
+          hintBtn.style.opacity = 0.4;
+          hintBtn.innerHTML = `<span class="art" data-art="bulb" style="width:28px;height:28px"></span>힌트 소진 (0/5)`;
+        }
+      }
       $("quizSay").innerHTML = ART.speaker;
       $("quizSay").onclick = () => say($("quizPrompt").innerText + ". " + [...box.children].map((b, i) => `${i + 1}번. ${b.dataset.say}`).join(". "));
       show("quizModal");
@@ -6300,10 +6401,19 @@
     }
     function showHint(free) {
       if (!G.activeCard) return;
-      if (!free) G.hintUsed = true;
-      $("quizHintBox").innerHTML = `💡 힌트: <b>${esc(G.activeCard.q.hint)}</b>`;
+      const hintBtn = $("quizHintBtn");
+      if (!free) {
+        if (G.stageHintsRemaining <= 0) return;
+        G.stageHintsRemaining--;
+        G.hintUsed = true;
+        if (hintBtn) {
+          hintBtn.innerHTML = `<span class="art" data-art="bulb" style="width:28px;height:28px"></span>힌트 (${G.stageHintsRemaining}/5)`;
+          hintBtn.disabled = true;
+          hintBtn.style.opacity = .4;
+        }
+      }
+      $("quizHintBox").innerHTML = `💡 힌트 (${!free ? '남은 횟수: ' + G.stageHintsRemaining + '/5' : '오답 도움'}): <b>${esc(G.activeCard.q.hint)}</b>`;
       $("quizHintBox").classList.remove("hidden");
-      $("quizHintBtn").disabled = true; $("quizHintBtn").style.opacity = .4;
     }
     function closeQuiz(later) {
       hide("quizModal");
@@ -6380,9 +6490,13 @@
         notice(G.combo >= 3 ? `${G.combo}연속! 점수 2배! (새 카드 등장)` : `정답! (스테이지 통과까지 ${10 - G.stageGot}장 남음)`);
       }
     }
+    const _burstGeo = new THREE.OctahedronGeometry(.12, 0);
     function burst(at, color) {
-      for (let i = 0; i < 32; i++) {
-        const m = new THREE.Mesh(new THREE.OctahedronGeometry(.12, 0), new THREE.MeshBasicMaterial({ color: i % 3 ? color : 0xFFFFFF }));
+      const bMat1 = new THREE.MeshBasicMaterial({ color: color });
+      const bMat2 = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
+      const count = isTouch ? 18 : 32;
+      for (let i = 0; i < count; i++) {
+        const m = new THREE.Mesh(_burstGeo, i % 3 ? bMat1 : bMat2);
         m.position.copy(at); m.userData.v = new THREE.Vector3((Math.random() - .5) * 6, 3 + Math.random() * 4, (Math.random() - .5) * 6); m.userData.life = .9;
         scene.add(m); fx.push(m);
       }
@@ -6443,12 +6557,16 @@
       if (e.target && e.target.tagName === "INPUT") return;
       input.keys[e.code] = true;
       if (e.code === "Space") { e.preventDefault(); P.jumpQueued = true; }
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") { P.isDashing = true; }
       if (e.code === "KeyT" && G.playing) openEmoteMenu();
       if (!$("emoteMenu").classList.contains("hidden")) { const n = parseInt(e.key, 10); const keys = Object.keys(EMOTES); if (n >= 1 && n <= keys.length) emote(keys[n - 1]); }
       if (e.code.startsWith("Arrow")) e.preventDefault();
     });
-    window.addEventListener("keyup", e => { input.keys[e.code] = false; });
-    window.addEventListener("blur", () => { input.keys = {}; });
+    window.addEventListener("keyup", e => {
+      input.keys[e.code] = false;
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") { P.isDashing = false; }
+    });
+    window.addEventListener("blur", () => { input.keys = {}; P.isDashing = false; });
 
     // 터치 디바이스 감지 및 활성화 (태블릿/모바일 지원)
     const detectTouchMode = () => {
@@ -6558,6 +6676,27 @@
     $("jumpBtn").addEventListener("touchstart", triggerJump, { passive: false });
     $("jumpBtn").addEventListener("click", triggerJump);
 
+    const dashBtn = $("dashBtn");
+    if (dashBtn) {
+      const startDash = e => {
+        if (e.stopPropagation) e.stopPropagation();
+        if (e.cancelable) e.preventDefault();
+        P.isDashing = true;
+        dashBtn.classList.add("active");
+      };
+      const endDash = e => {
+        if (e.stopPropagation) e.stopPropagation();
+        P.isDashing = false;
+        dashBtn.classList.remove("active");
+      };
+      dashBtn.addEventListener("pointerdown", startDash);
+      dashBtn.addEventListener("pointerup", endDash);
+      dashBtn.addEventListener("pointercancel", endDash);
+      dashBtn.addEventListener("touchstart", startDash, { passive: false });
+      dashBtn.addEventListener("touchend", endDash, { passive: false });
+      dashBtn.addEventListener("touchcancel", endDash, { passive: false });
+    }
+
     let isPointerDragging = false;
     // 화면 끌어서 시점 돌리기 (마우스·오른쪽 화면 터치)
     (function dragCamera() {
@@ -6626,38 +6765,87 @@
       if (len > 1) { ix /= len; iy /= len; }
       const fx = -Math.sin(camYaw), fz = -Math.cos(camYaw), rx = Math.cos(camYaw), rz = -Math.sin(camYaw);
       const mx = fx * iy + rx * ix, mz = fz * iy + rz * ix;
-      const dLake = Math.hypot(P.pos.x - ZONES.village.x, P.pos.z - ZONES.village.z); const dPlaza = Math.hypot(P.pos.x - ZONES.plaza.x, P.pos.z - ZONES.plaza.z); const inFountain = (G.stage === 1) && dPlaza < 3.4;
-      P.inWater = (dLake < 8.2 && (G.stage === 1 || G.stage === 3)) || inFountain;
-      const speed = P.inWater ? 4.8 : 6.5;
+
+      const isDash = P.isDashing || !!(input.keys.ShiftLeft || input.keys.ShiftRight);
+      const dLake = Math.hypot(P.pos.x - ZONES.village.x, P.pos.z - ZONES.village.z);
+      const dPlaza = Math.hypot(P.pos.x - ZONES.plaza.x, P.pos.z - ZONES.plaza.z);
+      const inFountain = (G.stage === 1) && dPlaza < 3.4;
+      const inWaterZone = (dLake < 8.2 && (G.stage === 1 || G.stage === 3)) || inFountain;
+      const waterSurfaceY = inFountain ? 0.48 : -0.28;
+
+      // 물 속 판정: 수면 아래 또는 수면 바로 위(0.15 이내)일 때만 물 속으로 인정
+      // 공중으로 점프해 솟구치면 물 밖(air) 판정으로 전환되어 무한 비행 방지
+      P.inWater = inWaterZone && (P.pos.y <= waterSurfaceY + 0.15);
+
+      const baseSpeed = P.inWater ? 4.8 : 6.5;
+      const speed = isDash ? (P.inWater ? 7.8 : 11.8) : baseSpeed;
       P.moving = Math.hypot(mx, mz) > .08;
       P.pos.x += mx * speed * dt; P.pos.z += mz * speed * dt;
       if (P.moving) {
         const target = Math.atan2(mx, mz);
         let d = target - P.face; d = Math.atan2(Math.sin(d), Math.cos(d));
-        P.face += d * Math.min(1, dt * 12);
+        P.face += d * Math.min(1, dt * (isDash ? 16 : 12));
       }
       if (P.inWater) {
-        if (P.jumpQueued) { P.vy = 7.5; sfx("jump"); waterRipple(P.pos); puff(P.pos, 4); }
+        const waterFloatingY = waterSurfaceY + Math.sin(clock.elapsedTime * 3.5) * 0.04;
+        // 물 속 점프: 수면에 떠 있을 때(onGround이고 상승 중이 아닐 때)만 1회 점프 허용 (공중 무한 점프 비행 방지)
+        if (P.jumpQueued && P.onGround && P.vy <= 0.1) {
+          P.vy = 7.0;
+          P.onGround = false;
+          sfx("jump");
+          waterRipple(P.pos);
+          puff(P.pos, 4);
+        }
         P.jumpQueued = false;
-        if (P.vy > 0) { P.vy -= 22 * dt; P.pos.y += P.vy * dt; P.onGround = false; }
-        else { P.pos.y = (inFountain ? 0.48 : -0.28) + Math.sin(clock.elapsedTime * 3.5) * 0.04; P.vy = 0; P.onGround = true; }
+        if (P.vy > 0) {
+          P.vy -= 22 * dt;
+          P.pos.y += P.vy * dt;
+          P.onGround = false;
+        } else {
+          P.pos.y = waterFloatingY;
+          P.vy = 0;
+          P.onGround = true;
+        }
         collide(P.pos);
         waterTimer += dt;
-        if (P.moving && waterTimer > 0.2) { waterTimer = 0; waterRipple(P.pos); }
+        const rippleInterval = isDash ? 0.12 : 0.2;
+        if (P.moving && waterTimer > rippleInterval) {
+          waterTimer = 0;
+          waterRipple(P.pos);
+        }
       } else {
-        if (P.jumpQueued && P.onGround) { P.vy = 8.6; P.onGround = false; sfx("jump"); }
-      P.jumpQueued = false;
-      P.vy -= 22 * dt;
-      P.pos.y += P.vy * dt;
-      collide(P.pos);
-      const g = groundAt(P.pos.x, P.pos.z, P.pos.y);
-      if (P.pos.y <= g) { P.pos.y = g; P.vy = 0; P.onGround = true; } else P.onGround = P.pos.y - g < .02;
+        if (P.jumpQueued && P.onGround) {
+          P.vy = 8.6;
+          P.onGround = false;
+          sfx("jump");
+        }
+        P.jumpQueued = false;
+        P.vy -= 22 * dt;
+        P.pos.y += P.vy * dt;
+        collide(P.pos);
+        const groundHeight = groundAt(P.pos.x, P.pos.z, P.pos.y);
+        const g = inWaterZone ? Math.max(groundHeight, waterSurfaceY) : groundHeight;
+        if (P.pos.y <= g) {
+          P.pos.y = g;
+          P.vy = 0;
+          P.onGround = true;
+        } else {
+          P.onGround = (P.pos.y - g < .02);
+        }
 
-      // 착지하면 몸이 찌그러졌다 펴지고 먼지가 남
-      if (P.onGround && !P.wasGround && P.lastVy < -5) { hero.userData.squash = .22; puff(P.pos, 5); }
-      P.wasGround = P.onGround; P.lastVy = P.vy;
-      dustTimer += dt;
-      if (P.moving && P.onGround && dustTimer > .2) { dustTimer = 0; puff(P.pos, 1); }
+        // 착지하면 몸이 찌그러졌다 펴지고 먼지가 남
+        if (P.onGround && !P.wasGround && P.lastVy < -5) {
+          hero.userData.squash = .22;
+          puff(P.pos, 5);
+        }
+        P.wasGround = P.onGround;
+        P.lastVy = P.vy;
+        dustTimer += dt;
+        const dustInterval = isDash ? 0.09 : 0.2;
+        if (P.moving && P.onGround && dustTimer > dustInterval) {
+          dustTimer = 0;
+          puff(P.pos, isDash ? 2 : 1);
+        }
       }
       animateHero(dt);
     }
@@ -6697,14 +6885,15 @@
     function animateHero(dt) {
       const U = hero.userData, t = clock.elapsedTime;
       hero.position.copy(P.pos); hero.rotation.y = P.face;
-      const walk = P.moving && P.onGround && !P.inWater, ph = t * 12;
+      const isDash = P.isDashing || !!(input.keys.ShiftLeft || input.keys.ShiftRight);
+      const walk = P.moving && P.onGround && !P.inWater, ph = t * (isDash ? 20 : 12);
       let rigY = walk ? Math.abs(Math.sin(ph)) * .07 : Math.sin(t * 2.2) * .012;
       let rigRot = 0, rigZ = walk ? Math.sin(ph) * .05 : 0, headX = 0, headZ = 0;
       let lx = walk ? Math.sin(ph) * .7 : 0, rx = walk ? -Math.sin(ph) * .7 : 0, lz = -.25, rz = .25;
       if (!P.onGround && !P.inWater) { lz = -1.1; rz = 1.1; }
       U.feet.forEach((f, i) => { f.position.z = .04 + (walk ? Math.sin(ph + i * Math.PI) * .12 : 0); f.position.y = .07 + (walk ? Math.max(0, Math.sin(ph + i * Math.PI)) * .06 : 0); });
       if (P.inWater) {
-        const swim = P.moving, sph = t * 10;
+        const swim = P.moving, sph = t * (isDash ? 16 : 10);
         if (swim) {
           U.rig.rotation.x = Math.PI * 0.35; headX = -0.42;
           lx = Math.sin(sph) * 1.3 - 0.3; rx = -Math.sin(sph) * 1.3 - 0.3; lz = -0.65; rz = 0.65;
@@ -6751,11 +6940,13 @@
       if (U.nameSprite) U.nameSprite.position.y = 2.15 + rigY * .4;
       if (bubble && bubble.visible) bubble.position.set(P.pos.x, P.pos.y + 3.4 + rigY * 1.5, P.pos.z);
     }
+    const _rippleGeo = new THREE.RingGeometry(0.18, 0.28, 20); _rippleGeo.rotateX(-Math.PI / 2);
+    const _rippleMat = new THREE.MeshBasicMaterial({ color: 0xA5F3FC, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+    const _puffGeo = new THREE.SphereGeometry(.12, 6, 5);
+    const _puffMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .8 });
+
     function waterRipple(at) {
-      const geo = new THREE.RingGeometry(0.18, 0.28, 24);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xA5F3FC, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
-      const r = new THREE.Mesh(geo, mat);
-      r.rotation.x = -Math.PI / 2;
+      const r = new THREE.Mesh(_rippleGeo, _rippleMat.clone());
       r.position.set(at.x, 0.06, at.z);
       r.userData = { life: 0.65, maxLife: 0.65, ripple: true };
       scene.add(r);
@@ -6763,7 +6954,7 @@
     }
     function puff(at, n) {
       for (let i = 0; i < n; i++) {
-        const m = new THREE.Mesh(new THREE.SphereGeometry(.12, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .8 }));
+        const m = new THREE.Mesh(_puffGeo, _puffMat.clone());
         m.position.set(at.x + (Math.random() - .5) * .4, at.y + .08, at.z + (Math.random() - .5) * .4);
         m.userData = { v: new THREE.Vector3((Math.random() - .5) * 1.2, .8, (Math.random() - .5) * 1.2), life: .5, puff: true };
         scene.add(m); fx.push(m);
@@ -6772,6 +6963,8 @@
     function openEmoteMenu() { const m = $("emoteMenu"); m.classList.toggle("hidden"); }
     function closeEmoteMenu() { $("emoteMenu").classList.add("hidden"); }
 
+    const _camTgt = new THREE.Vector3();
+    const _camWant = new THREE.Vector3();
     function updateCamera(dt) {
       if (P.moving && !isPointerDragging) {
         const forwardDot = (-Math.sin(camYaw)) * Math.sin(P.face) + (-Math.cos(camYaw)) * Math.cos(P.face);
@@ -6783,13 +6976,13 @@
           camYaw += diff * Math.min(1, dt * 2.8);
         }
       }
-      const tgt = new THREE.Vector3(P.pos.x, P.pos.y + 1.1, P.pos.z);
-      const want = new THREE.Vector3(
-        tgt.x + Math.sin(camYaw) * Math.cos(camPitch) * camDist,
-        tgt.y + Math.sin(camPitch) * camDist,
-        tgt.z + Math.cos(camYaw) * Math.cos(camPitch) * camDist);
-      camera.position.lerp(want, Math.min(1, dt * 8));
-      camera.lookAt(tgt);
+      _camTgt.set(P.pos.x, P.pos.y + 1.1, P.pos.z);
+      _camWant.set(
+        _camTgt.x + Math.sin(camYaw) * Math.cos(camPitch) * camDist,
+        _camTgt.y + Math.sin(camPitch) * camDist,
+        _camTgt.z + Math.cos(camYaw) * Math.cos(camPitch) * camDist);
+      camera.position.lerp(_camWant, Math.min(1, dt * 8));
+      camera.lookAt(_camTgt);
       if (sky) sky.position.copy(camera.position);
       if (starsGroup && starsGroup.visible) starsGroup.position.copy(camera.position);
 
@@ -6844,11 +7037,15 @@
           m.userData.v.y -= 12 * dt; m.position.addScaledVector(m.userData.v, dt); m.rotation.x += dt * 8;
           m.scale.setScalar(Math.max(.01, m.userData.life));
         }
-        if (m.userData.life <= 0) { scene.remove(m); fx.splice(i, 1); }
+        if (m.userData.life <= 0) {
+          scene.remove(m);
+          if (m.material && m.material.dispose) m.material.dispose();
+          fx.splice(i, 1);
+        }
       }
     }
 
-    let radarTick = 0;
+    let radarTick = 0, shadowTick = 0;
     function loop() {
       requestAnimationFrame(loop);
       const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
@@ -6868,7 +7065,8 @@
       updateFx(dt);
       updateCamera(dt);
       if (G.playing) updateOcclusion();
-      if ((radarTick += dt) > .1) { radarTick = 0; if (G.playing) drawRadar(); }
+      const radarInterval = isTouch ? 0.22 : 0.1;
+      if ((radarTick += dt) > radarInterval) { radarTick = 0; if (G.playing) drawRadar(); }
       renderer.render(scene, camera);
     }
 
@@ -6927,7 +7125,7 @@
     }
     function startGame(mode) {
       ["startModal", "resultModal", "pauseModal", "quizModal", "bookModal"].forEach(hide);
-      G.mode = mode; G.score = 0; G.combo = 0; G.got = 0; G.stage = 1; G.stageGot = 0; G.total = 30; G.time = 0; G.totalWrongAttempts = 0; G.missed = new Set(); G.learned = []; G.saved = false;
+      G.mode = mode; G.score = 0; G.combo = 0; G.got = 0; G.stage = 1; G.stageGot = 0; G.stageHintsRemaining = 5; G.total = 30; G.time = 0; G.totalWrongAttempts = 0; G.missed = new Set(); G.learned = []; G.saved = false;
       scene.remove(hero); hero = makeHero(G.hero); scene.add(hero);
       refreshStageCompanions();
       P.pos.set(0, 0, 4); P.vy = 0; P.face = Math.PI; camYaw = 0; camPitch = .5;
