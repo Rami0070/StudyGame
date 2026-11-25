@@ -470,7 +470,7 @@
       width: 86px;
       height: 86px;
       border-radius: 50%;
-      display: none;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -486,6 +486,10 @@
       color: #FFFFFF;
       padding: 0;
       flex: none;
+    }
+    #dashBtn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 28px rgba(255, 87, 34, 0.45), inset 0 2px 4px rgba(255, 255, 255, 0.7);
     }
     #dashBtn .dash-txt {
       font-size: 14px;
@@ -3998,7 +4002,8 @@
       const basin = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.8, .75, 32), stdPalette(0xE2E8F0, 0xCBD5E1, 0x475569)); basin.position.set(Z.x, .38, Z.z); basin.castShadow = true; stage1Group.add(basin);
       const water = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, .1, 32), stdPalette(0x0284C7, 0x0369A1, 0x0C4A6E, { roughness: .2 })); water.position.set(Z.x, .72, Z.z); stage1Group.add(water);
       const spout = new THREE.Mesh(new THREE.CylinderGeometry(.3, .45, 1.6, 16), stdPalette(0xE2E8F0, 0xCBD5E1, 0x475569)); spout.position.set(Z.x, 1.1, Z.z); stage1Group.add(spout);
-      stage1Colliders.push({ x: Z.x, z: Z.z, r: 3.7 });
+      // 중앙 분수대: 중앙 분수 기둥(spout)만 충돌 판정 적용, 분수대 수면 내부는 수영 가능하도록 허용
+      stage1Colliders.push({ x: Z.x, z: Z.z, r: 0.65 });
 
       const flagPaletteCols = [
         { s1: 0xDC2626, s2: 0xB91C1C, s3: 0x450A0A },
@@ -6558,16 +6563,26 @@
       if (e.target && e.target.tagName === "INPUT") return;
       input.keys[e.code] = true;
       if (e.code === "Space") { e.preventDefault(); P.jumpQueued = true; }
-      if (e.code === "ShiftLeft" || e.code === "ShiftRight") { P.isDashing = true; }
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+        P.isDashing = true;
+        if ($("dashBtn")) $("dashBtn").classList.add("active");
+      }
       if (e.code === "KeyT" && G.playing) openEmoteMenu();
       if (!$("emoteMenu").classList.contains("hidden")) { const n = parseInt(e.key, 10); const keys = Object.keys(EMOTES); if (n >= 1 && n <= keys.length) emote(keys[n - 1]); }
       if (e.code.startsWith("Arrow")) e.preventDefault();
     });
     window.addEventListener("keyup", e => {
       input.keys[e.code] = false;
-      if (e.code === "ShiftLeft" || e.code === "ShiftRight") { P.isDashing = false; }
+      if (e.code === "ShiftLeft" || e.code === "ShiftRight") {
+        P.isDashing = false;
+        if ($("dashBtn")) $("dashBtn").classList.remove("active");
+      }
     });
-    window.addEventListener("blur", () => { input.keys = {}; P.isDashing = false; });
+    window.addEventListener("blur", () => {
+      input.keys = {};
+      P.isDashing = false;
+      if ($("dashBtn")) $("dashBtn").classList.remove("active");
+    });
 
     // 터치 디바이스 감지 및 활성화 (태블릿/모바일 지원)
     const detectTouchMode = () => {
@@ -6686,7 +6701,7 @@
         dashBtn.classList.add("active");
       };
       const endDash = e => {
-        if (e.stopPropagation) e.stopPropagation();
+        if (e && e.stopPropagation) e.stopPropagation();
         P.isDashing = false;
         dashBtn.classList.remove("active");
       };
@@ -6696,6 +6711,9 @@
       dashBtn.addEventListener("touchstart", startDash, { passive: false });
       dashBtn.addEventListener("touchend", endDash, { passive: false });
       dashBtn.addEventListener("touchcancel", endDash, { passive: false });
+      dashBtn.addEventListener("click", e => { if (e.stopPropagation) e.stopPropagation(); });
+      window.addEventListener("pointerup", endDash);
+      window.addEventListener("pointercancel", endDash);
     }
 
     let isPointerDragging = false;
@@ -6770,13 +6788,36 @@
       const isDash = P.isDashing || !!(input.keys.ShiftLeft || input.keys.ShiftRight);
       const dLake = Math.hypot(P.pos.x - ZONES.village.x, P.pos.z - ZONES.village.z);
       const dPlaza = Math.hypot(P.pos.x - ZONES.plaza.x, P.pos.z - ZONES.plaza.z);
-      const inFountain = (G.stage === 1) && dPlaza < 3.4;
-      const inWaterZone = (dLake < 8.2 && (G.stage === 1 || G.stage === 3)) || inFountain;
-      const waterSurfaceY = inFountain ? 0.48 : -0.28;
 
-      // 물 속 판정: 수면 아래 또는 수면 바로 위(0.15 이내)일 때만 물 속으로 인정
-      // 공중으로 점프해 솟구치면 물 밖(air) 판정으로 전환되어 무한 비행 방지
-      P.inWater = inWaterZone && (P.pos.y <= waterSurfaceY + 0.15);
+      // 마을 나무 데크 부두 (Stage 1) 위에서는 수영하지 않고 데크 위에 서서 걸어다님
+      const onVillageDock = (G.stage === 1) && (Math.abs(P.pos.x - ZONES.village.x) < 1.4 && Math.abs(P.pos.z - (ZONES.village.z + 7.5)) < 2.2);
+
+      // 광장 분수대 (Stage 1): 직경 약 6.8m (반경 3.4m 이내)
+      const inFountain = (G.stage === 1) && (dPlaza < 3.4);
+
+      // 마을 호수 (Stage 1 & Stage 3): 직경 약 16.8m (반경 8.2m 이내)
+      const inLake = ((G.stage === 1 || G.stage === 3) && (dLake < 8.2)) && !onVillageDock;
+
+      const inWaterZone = inFountain || inLake;
+
+      // 수면 및 수영 기준 높이 설정:
+      // 분수대 수면은 y=0.72 위치이므로, 캐릭터가 물에 띄워져 수영할 때의 기준 y = 0.58
+      // 마을 호수 수면은 y=0.04 위치이므로, 캐릭터가 물에 띄워져 수영할 때의 기준 y = -0.18
+      let waterSurfaceY = 0;
+      if (inFountain) {
+        waterSurfaceY = 0.58;
+      } else if (inLake) {
+        if (dLake > 7.2) {
+          // 호수 해안가(모래사장) 경계 완만한 수심 경사 (7.2m ~ 8.2m)
+          const tShore = (8.2 - dLake) / 1.0;
+          waterSurfaceY = -0.18 * Math.max(0, Math.min(1, tShore));
+        } else {
+          waterSurfaceY = -0.18;
+        }
+      }
+
+      // 물 속(수영) 판정: 물 구역 내이고 수면 근처(수면 위 0.20m 이내) 또는 수면 아래일 때
+      P.inWater = inWaterZone && (P.pos.y <= waterSurfaceY + 0.20);
 
       const baseSpeed = P.inWater ? 4.8 : 6.5;
       const speed = isDash ? (P.inWater ? 7.8 : 11.8) : baseSpeed;
@@ -6788,14 +6829,14 @@
         P.face += d * Math.min(1, dt * (isDash ? 16 : 12));
       }
       if (P.inWater) {
-        const waterFloatingY = waterSurfaceY + Math.sin(clock.elapsedTime * 3.5) * 0.04;
-        // 물 속 점프: 수면에 떠 있을 때(onGround이고 상승 중이 아닐 때)만 1회 점프 허용 (공중 무한 점프 비행 방지)
+        const waterFloatingY = waterSurfaceY + Math.sin(clock.elapsedTime * 3.5) * 0.035;
+        // 물 속 점프: 수면에 떠 있을 때 1회 점프 허용
         if (P.jumpQueued && P.onGround && P.vy <= 0.1) {
           P.vy = 7.0;
           P.onGround = false;
           sfx("jump");
-          waterRipple(P.pos);
-          puff(P.pos, 4);
+          waterRipple(new THREE.Vector3(P.pos.x, waterSurfaceY + 0.02, P.pos.z));
+          puff(new THREE.Vector3(P.pos.x, waterSurfaceY + 0.02, P.pos.z), 4);
         }
         P.jumpQueued = false;
         if (P.vy > 0) {
@@ -6809,10 +6850,11 @@
         }
         collide(P.pos);
         waterTimer += dt;
-        const rippleInterval = isDash ? 0.12 : 0.2;
+        const rippleInterval = isDash ? 0.12 : 0.22;
         if (P.moving && waterTimer > rippleInterval) {
           waterTimer = 0;
-          waterRipple(P.pos);
+          waterRipple(new THREE.Vector3(P.pos.x, waterSurfaceY + 0.02, P.pos.z));
+          puff(new THREE.Vector3(P.pos.x, waterSurfaceY + 0.02, P.pos.z), isDash ? 2 : 1);
         }
       } else {
         if (P.jumpQueued && P.onGround) {
@@ -6824,12 +6866,16 @@
         P.vy -= 22 * dt;
         P.pos.y += P.vy * dt;
         collide(P.pos);
-        const groundHeight = groundAt(P.pos.x, P.pos.z, P.pos.y);
-        const g = inWaterZone ? Math.max(groundHeight, waterSurfaceY) : groundHeight;
+        const groundHeight = onVillageDock ? 0.18 : groundAt(P.pos.x, P.pos.z, P.pos.y);
+        const g = inWaterZone ? waterSurfaceY : groundHeight;
         if (P.pos.y <= g) {
           P.pos.y = g;
           P.vy = 0;
           P.onGround = true;
+          if (inWaterZone) {
+            waterRipple(new THREE.Vector3(P.pos.x, waterSurfaceY + 0.02, P.pos.z));
+            puff(new THREE.Vector3(P.pos.x, waterSurfaceY + 0.02, P.pos.z), 3);
+          }
         } else {
           P.onGround = (P.pos.y - g < .02);
         }
@@ -6894,9 +6940,11 @@
       if (!P.onGround && !P.inWater) { lz = -1.1; rz = 1.1; }
       U.feet.forEach((f, i) => { f.position.z = .04 + (walk ? Math.sin(ph + i * Math.PI) * .12 : 0); f.position.y = .07 + (walk ? Math.max(0, Math.sin(ph + i * Math.PI)) * .06 : 0); });
       if (P.inWater) {
-        const swim = P.moving, sph = t * (isDash ? 16 : 10);
+        const swim = P.moving, sph = t * (isDash ? 18 : 11);
         if (swim) {
-          U.rig.rotation.x = Math.PI * 0.35; headX = -0.42;
+          U.rig.rotation.x = Math.PI * 0.35;
+          rigZ = Math.sin(sph) * 0.08;
+          headX = -0.42;
           lx = Math.sin(sph) * 1.3 - 0.3; rx = -Math.sin(sph) * 1.3 - 0.3; lz = -0.65; rz = 0.65;
           U.feet[0].position.z = -0.22 + Math.sin(sph) * 0.14; U.feet[1].position.z = -0.22 - Math.sin(sph) * 0.14;
           U.feet[0].position.y = 0.12 + Math.cos(sph) * 0.08; U.feet[1].position.y = 0.12 - Math.cos(sph) * 0.08;
@@ -6948,7 +6996,8 @@
 
     function waterRipple(at) {
       const r = new THREE.Mesh(_rippleGeo, _rippleMat.clone());
-      r.position.set(at.x, 0.06, at.z);
+      const ry = (at && at.y !== undefined) ? at.y + 0.02 : 0.06;
+      r.position.set(at.x, ry, at.z);
       r.userData = { life: 0.65, maxLife: 0.65, ripple: true };
       scene.add(r);
       fx.push(r);
