@@ -71,17 +71,17 @@
     .scn .art { width: 100%; aspect-ratio: 1; max-width: 108px; }
     .scn span { font-size: 21px; }
     .scn[aria-pressed="true"] { border-color: var(--sun); background: #FFF4CF; transform: translateY(-4px) rotate(-1.5deg); box-shadow: 0 10px 0 var(--sun-d); }
-    .hero-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    .hero-card { border-radius: 30px; background: #fff; padding: 12px 8px 14px; display: grid; justify-items: center; gap: 4px; box-shadow: 0 6px 0 #E3DAC6; border: 5px solid transparent; position: relative; transition: transform .12s; }
-    .hero-card .art { width: min(150px, 100%); aspect-ratio: 1; }
-    .hero-card span { font-size: clamp(17px, 2.1vw, 24px); color: #232338; font-weight: 700; white-space: nowrap; }
+    .hero-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .hero-card { border-radius: 28px; background: #fff; padding: 12px 6px 14px; display: grid; justify-items: center; gap: 4px; box-shadow: 0 6px 0 #E3DAC6; border: 5px solid transparent; position: relative; transition: transform .12s; }
+    .hero-card .art { width: min(130px, 100%); aspect-ratio: 1; }
+    .hero-card span { font-size: clamp(14px, 1.6vw, 22px); color: #232338; font-weight: 700; white-space: nowrap; }
     .hero-card.on { border-color: var(--leaf); background: #EAFBE6; transform: translateY(-5px); box-shadow: 0 11px 0 var(--leaf-d); }
     .hero-name-row { display: flex; align-items: center; justify-content: center; gap: 14px; background: #fff; border-radius: 24px; padding: 10px 20px; box-shadow: 0 5px 0 #E3DAC6; margin-top: -4px; flex-wrap: wrap; }
     .hero-name-row .name-label { display: flex; align-items: center; gap: 8px; font-size: 22px; color: var(--ink); font-weight: 700; }
     .name-input-box { display: flex; align-items: center; gap: 8px; background: #F7F4EC; border: 3px solid var(--line); border-radius: 18px; padding: 6px 14px; transition: border-color .15s, background .15s; }
     .name-input-box:focus-within { border-color: var(--sea); background: #fff; box-shadow: 0 0 0 3px rgba(63,169,245,.2); }
     .role-prefix { font-size: 24px; color: var(--sea-d); font-weight: 700; white-space: nowrap; }
-    #heroCustomName { font-family: 'Jua', sans-serif; font-size: 24px; border: none; background: transparent; color: var(--ink); width: 150px; outline: none; }
+    #heroCustomName { font-family: 'Jua', sans-serif; font-size: 24px; border: none; background: transparent; color: var(--ink); min-width: 180px; width: 230px; max-width: 280px; outline: none; }
     #heroCustomName::placeholder { color: #BDB7CA; font-size: 20px; }
     .hero-card.on::after { content: "✔"; position: absolute; top: -12px; right: -10px; width: 44px; height: 44px; border-radius: 50%; background: var(--leaf); color: #fff; display: grid; place-items: center; font-size: 24px; box-shadow: 0 4px 0 var(--leaf-d); }
     .start-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
@@ -369,6 +369,7 @@
 
     @media (max-width: 760px) {
       .scn-row { grid-template-columns: repeat(3, 1fr); }
+      .hero-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
       .hero-card .art { width: 100px; }
       .story { flex-direction: column; align-items: stretch; }
       .story .who { display: flex; align-items: center; gap: 12px; width: auto; }
@@ -402,7 +403,7 @@
     #rightControls {
       position: absolute;
       right: max(24px, env(safe-area-inset-right, 0px));
-      top: calc(50% - 35px);
+      top: calc(50% + 80px);
       transform: translateY(-50%);
       z-index: 16;
       display: flex;
@@ -673,7 +674,7 @@
         </label>
         <div class="name-input-box">
           <span id="heroRolePrefix" class="role-prefix">탐험가</span>
-          <input type="text" id="heroCustomName" maxlength="8" placeholder="예: 도로" autocomplete="off" aria-label="캐릭터 이름">
+          <input type="text" id="heroCustomName" maxlength="16" placeholder="예: 도로" autocomplete="off" aria-label="캐릭터 이름">
         </div>
       </div>
       <div class="step-title"><b>2</b>어떻게 놀까?</div>
@@ -734,7 +735,7 @@
             <div class="stat"><span class="art" data-art="clock" style="width:28px;height:28px"></span><span id="resultTime"></span></div>
           </div>
           <form class="namebox" id="rankForm">
-            <input id="rankName" maxlength="6" placeholder="내 이름" autocomplete="off" aria-label="순위표에 올릴 이름">
+            <input id="rankName" maxlength="12" placeholder="내 이름" autocomplete="off" aria-label="순위표에 올릴 이름">
             <button type="submit" class="jelly sun" style="font-size:20px;min-height:50px;padding:10px 18px">🏅 순위 올리기</button>
           </form>
           <ol id="rankList"></ol>
@@ -786,7 +787,8 @@
       // 친구들
       explorer: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="152" rx="46" ry="6" fill="#000" opacity=".08"/><path d="M96 142 c18 0 30 -6 32 -20 c2 -12 -8 -20 -16 -18 c-5 1 -8 6 -6 11 c2 5 7 5 9 1 c2 -4 6 -3 5 4 c-1 8 -10 13 -24 12" fill="#D48B47" stroke="#BA7333" stroke-width="2"/><rect x="52" y="106" width="56" height="42" rx="6" fill="#38BDF8"/><path d="M52 104 Q80 116 108 104 Q96 118 80 120 Q64 118 52 104 Z" fill="#92400E"/><path d="M74 116 L80 132 L86 116 Z" fill="#A16207"/><circle cx="80" cy="116" r="4.5" fill="#78350F"/><polygon points="46,58 36,22 66,42" fill="#D48B47" stroke="#BA7333" stroke-width="2"/><polygon points="48,54 40,28 62,43" fill="#FFAAA6"/><polygon points="114,58 124,22 94,42" fill="#D48B47" stroke="#BA7333" stroke-width="2"/><polygon points="112,54 120,28 98,43" fill="#FFAAA6"/><ellipse cx="80" cy="74" rx="38" ry="32" fill="#E29F64"/><path d="M38 58 Q80 44 122 58 L126 63 Q80 49 34 63 Z" fill="#C68A3C" stroke="#A76E27" stroke-width="1.5"/><path d="M50 54 C52 30 62 20 80 20 C98 20 108 30 110 54 Z" fill="#D9943B"/><rect x="50" y="47" width="60" height="7" rx="2" fill="#8B551E"/><circle cx="80" cy="40" r="7.5" fill="#FEE066" stroke="#D97706" stroke-width="2"/><circle cx="80" cy="40" r="3" fill="#FEF08A"/><path d="M36 78 L52 79 M34 85 L52 83" stroke="#854D0E" stroke-width="2.5" stroke-linecap="round"/><path d="M124 78 L108 79 M126 85 L108 83" stroke="#854D0E" stroke-width="2.5" stroke-linecap="round"/><circle cx="58" cy="85" r="7" fill="#F87171" opacity=".55"/><circle cx="102" cy="85" r="7" fill="#F87171" opacity=".55"/><circle cx="65" cy="74" r="6" fill="#3E2211"/><circle cx="95" cy="74" r="6" fill="#3E2211"/><circle cx="67" cy="72" r="2.2" fill="#fff"/><circle cx="97" cy="72" r="2.2" fill="#fff"/><polygon points="77,80 83,80 80,84" fill="#78350F"/><path d="M74 85 Q77 89 80 85 Q83 89 86 85" fill="none" stroke="#78350F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
       cyberbot: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="152" rx="46" ry="6" fill="#000" opacity=".08"/><path d="M100 134 Q116 130 120 114" fill="none" stroke="#64748B" stroke-width="7" stroke-linecap="round"/><path d="M125 110 Q128 116 125 122" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/><path d="M129 114 Q132 118 129 124" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/><rect x="52" y="104" width="56" height="38" rx="16" fill="#CBD5E1" stroke="#94A3B8" stroke-width="3"/><ellipse cx="64" cy="144" rx="10" ry="6" fill="#64748B"/><ellipse cx="96" cy="144" rx="10" ry="6" fill="#64748B"/><circle cx="80" cy="120" r="8" fill="#22C55E" stroke="#16A34A" stroke-width="2"/><circle cx="80" cy="120" r="3.5" fill="#86EFAC"/><line x1="80" y1="36" x2="80" y2="18" stroke="#94A3B8" stroke-width="5" stroke-linecap="round"/><circle cx="80" cy="14" r="8.5" fill="#EF4444" stroke="#DC2626" stroke-width="2"/><circle cx="78" cy="12" r="2.5" fill="#FCA5A5"/><path d="M46 52 C32 52 28 66 30 84 C31 94 38 100 44 96 C48 92 48 76 50 62 Z" fill="#64748B"/><path d="M114 52 C128 52 132 66 130 84 C129 94 122 100 116 96 C112 92 112 76 110 62 Z" fill="#64748B"/><rect x="36" y="36" width="88" height="66" rx="28" fill="#D6DEE8" stroke="#94A3B8" stroke-width="4"/><rect x="46" y="52" width="68" height="30" rx="15" fill="#1E293B"/><rect x="58" y="59" width="14" height="16" rx="4" fill="#00F0FF"/><rect x="88" y="59" width="14" height="16" rx="4" fill="#00F0FF"/><ellipse cx="80" cy="88" rx="15" ry="10" fill="#F8FAFC"/><ellipse cx="80" cy="83" rx="4" ry="2.8" fill="#1E293B"/><path d="M76 87 Q80 91 84 87" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/></svg>`,
-      wizard: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="152" rx="46" ry="6" fill="#000" opacity=".08"/><circle cx="42" cy="138" r="12" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="2"/><circle cx="40" cy="136" r="9" fill="#FFFFFF"/><path d="M38 132 Q42 138 38 144" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/><path d="M54 62 C40 40 42 16 56 12 C64 10 70 24 66 54 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><path d="M54 54 C46 38 48 22 56 18 C61 16 65 26 62 48 Z" fill="#FBCFE8"/><path d="M106 62 C120 40 118 16 104 12 C96 10 90 24 94 54 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><path d="M106 54 C114 38 112 22 104 18 C99 16 95 26 98 48 Z" fill="#FBCFE8"/><path d="M46 150 L56 106 Q80 112 104 106 L114 150 Z" fill="#7C3AED"/><path d="M80 110 L80 150" stroke="#6D28D9" stroke-width="3"/><line x1="126" y1="146" x2="126" y2="108" stroke="#B45309" stroke-width="4.5" stroke-linecap="round"/><circle cx="126" cy="104" r="8.5" fill="#EC4899" stroke="#DB2777" stroke-width="2"/><circle cx="124" cy="102" r="3" fill="#FBCFE8"/><ellipse cx="80" cy="80" rx="36" ry="30" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><circle cx="60" cy="90" r="6" fill="#F472B6" opacity=".5"/><circle cx="100" cy="90" r="6" fill="#F472B6" opacity=".5"/><circle cx="68" cy="80" r="5.5" fill="#1E293B"/><circle cx="92" cy="80" r="5.5" fill="#1E293B"/><circle cx="70" cy="78" r="2" fill="#fff"/><circle cx="94" cy="78" r="2" fill="#fff"/><polygon points="78,86 82,86 80,89" fill="#F472B6"/><path d="M75 90 Q78 93 80 90 Q82 93 85 90" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"/><path d="M38 68 Q80 58 122 68 L118 73 Q80 63 42 73 Z" fill="#5B21B6"/><path d="M50 67 L80 16 L110 67 Q80 58 50 67 Z" fill="#7C3AED"/><polygon points="80,38 82.5,44 89,44.5 84,49 85.5,55 80,51.5 74.5,55 76,49 71,44.5 77.5,44" fill="#FBBF24" stroke="#D97706" stroke-width="1"/></svg>`
+      wizard: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="152" rx="46" ry="6" fill="#000" opacity=".08"/><circle cx="42" cy="138" r="12" fill="#F1F5F9" stroke="#E2E8F0" stroke-width="2"/><circle cx="40" cy="136" r="9" fill="#FFFFFF"/><path d="M38 132 Q42 138 38 144" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/><path d="M54 62 C40 40 42 16 56 12 C64 10 70 24 66 54 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><path d="M54 54 C46 38 48 22 56 18 C61 16 65 26 62 48 Z" fill="#FBCFE8"/><path d="M106 62 C120 40 118 16 104 12 C96 10 90 24 94 54 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><path d="M106 54 C114 38 112 22 104 18 C99 16 95 26 98 48 Z" fill="#FBCFE8"/><path d="M46 150 L56 106 Q80 112 104 106 L114 150 Z" fill="#7C3AED"/><path d="M80 110 L80 150" stroke="#6D28D9" stroke-width="3"/><line x1="126" y1="146" x2="126" y2="108" stroke="#B45309" stroke-width="4.5" stroke-linecap="round"/><circle cx="126" cy="104" r="8.5" fill="#EC4899" stroke="#DB2777" stroke-width="2"/><circle cx="124" cy="102" r="3" fill="#FBCFE8"/><ellipse cx="80" cy="80" rx="36" ry="30" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2"/><circle cx="60" cy="90" r="6" fill="#F472B6" opacity=".5"/><circle cx="100" cy="90" r="6" fill="#F472B6" opacity=".5"/><circle cx="68" cy="80" r="5.5" fill="#1E293B"/><circle cx="92" cy="80" r="5.5" fill="#1E293B"/><circle cx="70" cy="78" r="2" fill="#fff"/><circle cx="94" cy="78" r="2" fill="#fff"/><polygon points="78,86 82,86 80,89" fill="#F472B6"/><path d="M75 90 Q78 93 80 90 Q82 93 85 90" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round"/><path d="M38 68 Q80 58 122 68 L118 73 Q80 63 42 73 Z" fill="#5B21B6"/><path d="M50 67 L80 16 L110 67 Q80 58 50 67 Z" fill="#7C3AED"/><polygon points="80,38 82.5,44 89,44.5 84,49 85.5,55 80,51.5 74.5,55 76,49 71,44.5 77.5,44" fill="#FBBF24" stroke="#D97706" stroke-width="1"/></svg>`,
+      martial: `<svg viewBox="0 0 160 160"><ellipse cx="80" cy="152" rx="46" ry="6" fill="#000" opacity=".08"/><path d="M102 144 C128 144 146 128 142 98 C138 72 116 62 108 72 C102 80 114 90 120 96 C126 104 122 124 100 134 Z" fill="#92400E" stroke="#78350F" stroke-width="2"/><path d="M106 140 C124 138 136 124 132 102 C128 84 116 78 112 84 C108 90 116 98 120 106 C124 116 118 128 104 134 Z" fill="#D97706"/><path d="M116 92 C120 102 122 114 112 126" stroke="#FEF3C7" stroke-width="3" stroke-linecap="round" fill="none"/><rect x="52" y="104" width="56" height="42" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/><path d="M54 104 L78 126 L80 126 L106 104" fill="none" stroke="#CBD5E1" stroke-width="3.5" stroke-linecap="round"/><path d="M58 104 L80 124 L102 104" fill="#F1F5F9"/><rect x="52" y="126" width="56" height="8" rx="2" fill="#1E293B"/><circle cx="80" cy="130" r="5" fill="#0F172A"/><path d="M78 132 L74 148 M82 132 L86 146" stroke="#0F172A" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="66" cy="146" rx="9" ry="6" fill="#92400E"/><ellipse cx="94" cy="146" rx="9" ry="6" fill="#92400E"/><path d="M40 68 Q24 64 16 74 Q24 76 38 72 Z" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/><path d="M38 70 Q20 74 14 86 Q22 84 36 74 Z" fill="#DC2626"/><circle cx="48" cy="48" r="14" fill="#B45309" stroke="#92400E" stroke-width="2"/><circle cx="48" cy="48" r="8" fill="#FFAAA6"/><circle cx="112" cy="48" r="14" fill="#B45309" stroke="#92400E" stroke-width="2"/><circle cx="112" cy="48" r="8" fill="#FFAAA6"/><ellipse cx="80" cy="74" rx="38" ry="32" fill="#C26D1E"/><ellipse cx="64" cy="84" rx="14" ry="12" fill="#FEF3C7"/><ellipse cx="96" cy="84" rx="14" ry="12" fill="#FEF3C7"/><ellipse cx="80" cy="86" rx="16" ry="10" fill="#FEF3C7"/><path d="M80 44 L80 62" stroke="#582900" stroke-width="3.5" stroke-linecap="round"/><path d="M72 47 L73 60" stroke="#582900" stroke-width="2.5" stroke-linecap="round"/><path d="M88 47 L87 60" stroke="#582900" stroke-width="2.5" stroke-linecap="round"/><rect x="42" y="58" width="76" height="9" rx="3" fill="#EF4444" stroke="#DC2626" stroke-width="1.5"/><circle cx="80" cy="62.5" r="4.5" fill="#FBBF24" stroke="#D97706" stroke-width="1.2"/><circle cx="80" cy="62.5" r="2" fill="#FFFBEB"/><circle cx="56" cy="84" r="6" fill="#F87171" opacity=".6"/><circle cx="104" cy="84" r="6" fill="#F87171" opacity=".6"/><circle cx="65" cy="74" r="6" fill="#1E293B"/><circle cx="95" cy="74" r="6" fill="#1E293B"/><circle cx="67" cy="72" r="2.2" fill="#fff"/><circle cx="97" cy="72" r="2.2" fill="#fff"/><polygon points="77,80 83,80 80,83" fill="#78350F"/><path d="M75 84 Q78 87 80 84 Q82 87 85 84" fill="none" stroke="#78350F" stroke-width="2.2" stroke-linecap="round"/><rect x="78" y="84" width="4" height="4" rx="1" fill="#fff" stroke="#D1D5DB" stroke-width="0.8"/></svg>`
     };
     function art(name) {
       return `<img src="assets/${name}.png" alt="" style="display:none" onload="this.style.display='block';this.nextElementSibling&&this.nextElementSibling.remove()" onerror="this.remove()">${ART[name] || ""}`;
@@ -3737,17 +3739,17 @@
       const len = Math.hypot(toCenterX, toCenterZ);
       const dirX = toCenterX / len, dirZ = toCenterZ / len;
 
-      // 중앙광장 시선에 수직인 좌우 접선 벡터 (중앙광장에서 바라볼 때: 왼쪽 Wizard, 중앙 Explorer, 오른쪽 Cyberbot)
+      // 중앙광장 시선에 수직인 좌우 접선 벡터 (중앙광장에서 바라볼 때: 왼쪽 Wizard, Explorer, Martial, Cyberbot)
       const tanX = -dirZ, tanZ = dirX;
 
       // 동상 크기 2배 확대에 맞춘 여유 있는 간격 배치
-      const spacing = 3.9;
+      const spacing = 3.6;
       const statueDefs = [
         {
           type: "wizard",
           nameKo: "마 법 사",
           nameEn: "WIZARD",
-          offset: -spacing, // 좌측
+          offset: -spacing * 1.5, // 좌측 외곽
           colH: 1.35,
           colW: 2.2
         },
@@ -3755,15 +3757,23 @@
           type: "explorer",
           nameKo: "탐 험 가",
           nameEn: "EXPLORER",
-          offset: 0.0, // 중앙 (대장으로서 살짝 더 높고 위엄 있는 기단)
+          offset: -spacing * 0.5, // 좌측 중앙
           colH: 1.55,
           colW: 2.4
+        },
+        {
+          type: "martial",
+          nameKo: "무 술 가",
+          nameEn: "MARTIAL ARTIST",
+          offset: spacing * 0.5, // 우측 중앙
+          colH: 1.45,
+          colW: 2.3
         },
         {
           type: "cyberbot",
           nameKo: "로 보 트",
           nameEn: "CYBERBOT",
-          offset: spacing, // 우측
+          offset: spacing * 1.5, // 우측 외곽
           colH: 1.35,
           colW: 2.2
         }
@@ -5091,29 +5101,36 @@
     }
 
     // 캐릭터: 큰 머리 2등신. 발이 y=0. 머리·팔·발이 따로 움직이고 표정이 바뀜
-    const HERO_ROLES = { explorer: "탐험가", cyberbot: "로보트", wizard: "마법사" };
-    const HERO_SPECIES = { explorer: "고양이", cyberbot: "강아지", wizard: "토끼" };
-    const HERO_DEFAULTS = { explorer: "도로", cyberbot: "도로", wizard: "도로" };
+    const HERO_ROLES = { explorer: "탐험가", cyberbot: "로보트", wizard: "마법사", martial: "무술가" };
+    const HERO_SPECIES = { explorer: "고양이", cyberbot: "강아지", wizard: "토끼", martial: "다람쥐" };
+    const HERO_DEFAULTS = { explorer: "도로", cyberbot: "도로", wizard: "도로", martial: "도로" };
 
     function getHeroFullName(heroType = G.hero, withSpecies = false) {
       const prefix = HERO_ROLES[heroType] || "탐험가";
       const def = HERO_DEFAULTS[heroType] || "도로";
       let custom = (heroType === G.hero ? (G.customName || "").trim() : "");
-      custom = custom.replace(/^(탐험가|로보트|로봇|마법사)\s*/g, "").trim();
+      custom = custom.replace(/^(탐험가|로보트|로봇|마법사|무술가)\s*/g, "").trim();
       custom = custom.replace(/\s*\([^)]*\)/g, "").trim();
       const name = custom || def;
       const sp = HERO_SPECIES[heroType];
       return (withSpecies && sp) ? `${prefix} ${name} (${sp})` : `${prefix} ${name}`;
     }
 
-        function makeNameSprite(text, heroType) {
+    function makeNameSprite(text, heroType) {
       const c = document.createElement("canvas");
       c.width = 1024; c.height = 256;
       const x = c.getContext("2d");
 
-      x.font = "bold 76px 'Jua', 'BM JUA', 'BMJUA', sans-serif";
-      const metrics = x.measureText(text);
-      const w = Math.min(960, Math.max(440, metrics.width + 112));
+      // 텍스트 길이에 따른 유동 폰트 스케일링 (16글자 긴 닉네임도 깔끔하게 수용)
+      let fontSize = 74;
+      x.font = `bold ${fontSize}px 'Jua', 'BM JUA', 'BMJUA', sans-serif`;
+      let textWidth = x.measureText(text).width;
+      if (textWidth > 820) {
+        fontSize = Math.max(38, Math.floor(fontSize * (820 / textWidth)));
+        x.font = `bold ${fontSize}px 'Jua', 'BM JUA', 'BMJUA', sans-serif`;
+        textWidth = x.measureText(text).width;
+      }
+      const w = Math.min(960, Math.max(440, textWidth + 96));
       const h = 144;
       const left = (1024 - w) / 2, top = (256 - h) / 2;
 
@@ -5128,13 +5145,13 @@
       x.fill();
 
       // 테두리
-      const borderColor = { explorer: "#3FA9F5", cyberbot: "#46C06A", wizard: "#8E6CEF" }[heroType] || "#3FA9F5";
+      const borderColor = { explorer: "#3FA9F5", cyberbot: "#46C06A", wizard: "#8E6CEF", martial: "#F59E0B" }[heroType] || "#F59E0B";
       x.lineWidth = 12;
       x.strokeStyle = borderColor;
       x.stroke();
 
-      // 이름 텍스트 (글자 크기 2배)
-      x.font = "bold 76px 'Jua', 'BM JUA', 'BMJUA', sans-serif";
+      // 이름 텍스트
+      x.font = `bold ${fontSize}px 'Jua', 'BM JUA', 'BMJUA', sans-serif`;
       x.textAlign = "center";
       x.textBaseline = "middle";
       x.fillStyle = "#2D283E";
@@ -5161,19 +5178,21 @@
       const bodyCol = isStatue ? 0xF8FAFC : ({
         explorer: 0x0284C7,  // 너무 밝던 하늘색(0x38BDF8) -> 차분하고 선명한 딥 스카이 블루(0x0284C7)
         cyberbot: 0x64748B,  // 거의 흰색으로 보이던 0xCBD5E1 -> 세련된 슬레이트 티타늄(0x64748B)
-        wizard:   0x5B21B6   // 0x7C3AED -> 깊이 있는 미드나잇 바이올렛(0x5B21B6)
+        wizard:   0x5B21B6,  // 0x7C3AED -> 깊이 있는 미드나잇 바이올렛(0x5B21B6)
+        martial:  0xF8FAFC   // 깔끔하고 기품 있는 도복 순백색
       }[type] || 0x0284C7);
 
       const furCol = isStatue ? 0xFFFFFF : ({
         explorer: 0xB45309,  // 쨍하던 주황(0xD98A48) -> 따뜻하고 부드러운 진저 앰버(0xB45309)
         cyberbot: 0x94A3B8,  // 너무 밝던 은색(0xD6DEE8) -> 깔끔하고 차분한 라이트 메탈 그레이(0x94A3B8)
-        wizard:   0xD8D4CB   // 하얗게 날아가던 순백(0xFFFFFF) -> 부드러운 오트밀 크림(0xD8D4CB)
-      }[type] || 0xB45309);
+        wizard:   0xD8D4CB,  // 하얗게 날아가던 순백(0xFFFFFF) -> 부드러운 오트밀 크림(0xD8D4CB)
+        martial:  0x9A4B13   // 깊고 따스한 밤색 다람쥐 털 (체스트넛 앰버)
+      }[type] || 0x9A4B13);
 
       const statueRoughness = 0.88; // 무광 순백 석고의 부드러운 난반사
       const statueMetalness = 0.0;  // 비금속 석고상 (메탈감 0)
 
-      // Body (Shirt / Robot Torso / Robe)
+      // Body (Shirt / Robot Torso / Robe / Martial Gi)
       let body;
       if (type === "wizard") {
         body = new THREE.Mesh(new THREE.CylinderGeometry(.22, .42, .5, 20), std(bodyCol, { roughness: isStatue ? statueRoughness : .65, metalness: isStatue ? 0 : 0 }));
@@ -5188,6 +5207,29 @@
         const light = new THREE.Mesh(new THREE.SphereGeometry(.07, 12, 10), lightMat);
         light.position.set(0, .42, .27);
         rig.add(light);
+      } else if (type === "martial") {
+        // Martial Gi (도복 몸통 + V넥 깃 + 허리 검은띠)
+        body = new THREE.Mesh(new THREE.CylinderGeometry(.24, .3, .46, 20), std(bodyCol, { roughness: isStatue ? statueRoughness : .6, metalness: 0 }));
+        body.position.y = .38;
+
+        const lapelMat = std(isStatue ? 0xE2E8F0 : 0xEDF2F7, { roughness: isStatue ? .88 : .65, metalness: 0 });
+        const lapelL = new THREE.Mesh(new THREE.BoxGeometry(.05, .26, .035), lapelMat);
+        lapelL.position.set(-.07, .44, .25); lapelL.rotation.z = -0.52; lapelL.rotation.y = 0.15;
+        const lapelR = new THREE.Mesh(new THREE.BoxGeometry(.05, .26, .035), lapelMat);
+        lapelR.position.set(.07, .44, .25); lapelR.rotation.z = 0.52; lapelR.rotation.y = -0.15;
+        rig.add(lapelL, lapelR);
+
+        const beltCol = isStatue ? 0x64748B : 0x1E293B;
+        const beltMat = std(beltCol, { roughness: isStatue ? .85 : .7, metalness: 0 });
+        const belt = new THREE.Mesh(new THREE.CylinderGeometry(.285, .285, .08, 20), beltMat);
+        belt.position.y = .26; rig.add(belt);
+
+        const knot = new THREE.Mesh(new THREE.SphereGeometry(.045, 8, 8), beltMat);
+        knot.position.set(.03, .26, .28); rig.add(knot);
+        const tie1 = new THREE.Mesh(new THREE.BoxGeometry(.045, .15, .02), beltMat);
+        tie1.position.set(.01, .19, .285); tie1.rotation.z = 0.12; rig.add(tie1);
+        const tie2 = new THREE.Mesh(new THREE.BoxGeometry(.045, .18, .02), beltMat);
+        tie2.position.set(.06, .17, .285); tie2.rotation.z = -0.18; rig.add(tie2);
       } else { // explorer (고양이)
         body = new THREE.Mesh(new THREE.CylinderGeometry(.24, .3, .46, 20), std(bodyCol, { roughness: isStatue ? statueRoughness : .6, metalness: isStatue ? 0 : 0 }));
         body.position.y = .38;
@@ -5257,6 +5299,44 @@
 
         rig.add(tailGroup);
         U.tail = tailGroup;
+      } else if (type === "martial") {
+        // Squirrel tail: 등 뒤로 커다랗고 풍성하게 S자로 솟아오르는 다람쥐 꼬리
+        const tailGroup = new THREE.Group();
+        tailGroup.position.set(0, .20, -.20);
+        const tailMat = std(furCol, { roughness: isStatue ? statueRoughness : .75, metalness: 0 });
+        const curvePoints = [
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, .05, -.18),
+          new THREE.Vector3(0, .24, -.32),
+          new THREE.Vector3(0, .50, -.28),
+          new THREE.Vector3(0, .72, -.14),
+          new THREE.Vector3(0, .78, -.02)
+        ];
+        const squirrelCurve = new THREE.CatmullRomCurve3(curvePoints);
+        const tubeGeo = new THREE.TubeGeometry(squirrelCurve, 24, .105, 12, false);
+        const tubeMesh = new THREE.Mesh(tubeGeo, tailMat);
+        tailGroup.add(tubeMesh);
+
+        const puff1 = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 12), tailMat);
+        puff1.position.set(0, .38, -.30);
+        puff1.scale.set(1.15, 1.4, 1.25);
+        tailGroup.add(puff1);
+
+        const puff2 = new THREE.Mesh(new THREE.SphereGeometry(.13, 14, 12), tailMat);
+        puff2.position.set(0, .64, -.20);
+        puff2.scale.set(1.1, 1.3, 1.2);
+        tailGroup.add(puff2);
+
+        if (!isStatue) {
+          const innerTailMat = std(0xD97706, { roughness: .8, metalness: 0 });
+          const puffAccent = new THREE.Mesh(new THREE.SphereGeometry(.11, 12, 10), innerTailMat);
+          puffAccent.position.set(0, .52, -.24);
+          puffAccent.scale.set(0.9, 1.4, 0.9);
+          tailGroup.add(puffAccent);
+        }
+
+        rig.add(tailGroup);
+        U.tail = tailGroup;
       } else { // wizard (토끼)
         // Fluffy bunny cotton-ball tail
         const tailMat = std(furCol, { roughness: isStatue ? statueRoughness : .85, metalness: 0 });
@@ -5268,7 +5348,7 @@
       }
 
       // Feet / Paws
-      const footCol = isStatue ? 0xF1F5F9 : (type === "cyberbot" ? 0x475569 : (type === "wizard" ? 0xD8D4CB : 0xB45309));
+      const footCol = isStatue ? 0xF1F5F9 : (type === "cyberbot" ? 0x475569 : (type === "wizard" ? 0xD8D4CB : (type === "martial" ? 0x853C0C : 0xB45309)));
       U.feet = [-1, 1].map(s => {
         const f = new THREE.Mesh(new THREE.SphereGeometry(.1, 10, 8), std(footCol, { roughness: isStatue ? statueRoughness : .6, metalness: 0 }));
         f.position.set(.13 * s, .07, .04);
@@ -5305,6 +5385,14 @@
         hand.position.y = -.30;
         hand.castShadow = true;
         pivot.add(hand);
+
+        // 무술가 손목 보호대 / 밴드 (도복 소매 끝 붉은 손목 밴드)
+        if (type === "martial") {
+          const wrapCol = isStatue ? 0x64748B : 0xDC2626;
+          const wrap = new THREE.Mesh(new THREE.CylinderGeometry(.075, .08, .07, 12), std(wrapCol, { roughness: isStatue ? .88 : .6, metalness: 0 }));
+          wrap.position.y = -.25;
+          pivot.add(wrap);
+        }
 
         pivot.rotation.z = .25 * s;
         rig.add(pivot);
@@ -5407,6 +5495,91 @@
         const nose = new THREE.Mesh(new THREE.SphereGeometry(.04, 8, 8), std(isStatue ? 0x64748B : 0x1E293B, { roughness: isStatue ? .85 : .85, metalness: 0 }));
         nose.position.set(0, -.09, .38); headG.add(nose);
 
+      } else if (type === "martial") {
+        // SQUIRREL EARS: 앙증맞고 둥근 다람쥐 귀 (투톤 핑크 내이)
+        [-1, 1].forEach(s => {
+          const earG = new THREE.Group();
+          earG.position.set(.22 * s, .35, -.02);
+          earG.rotation.z = -.24 * s;
+          earG.rotation.x = -.08;
+          const outer = new THREE.Mesh(new THREE.SphereGeometry(.12, 14, 12), std(furCol, { roughness: isStatue ? statueRoughness : .7, metalness: 0 }));
+          outer.scale.set(1.0, 1.25, 0.65);
+          const innerCol = isStatue ? 0xE2E8F0 : 0xFCA5A5;
+          const inner = new THREE.Mesh(new THREE.SphereGeometry(.08, 12, 10), std(innerCol, { roughness: isStatue ? .90 : .7, metalness: 0 }));
+          inner.scale.set(0.9, 1.15, 0.5);
+          inner.position.set(0, -.01, .03);
+          earG.add(outer, inner);
+          headG.add(earG);
+        });
+
+        // MARTIAL ARTS RED HEADBAND (열정의 붉은 무술 머리띠)
+        const bandCol = isStatue ? 0xE2E8F0 : 0xDC2626;
+        const bandMat = std(bandCol, { roughness: isStatue ? .90 : .5, metalness: 0 });
+        const headband = new THREE.Mesh(new THREE.CylinderGeometry(.422, .422, .07, 26, 1, true), bandMat);
+        headband.position.set(0, .09, 0);
+        headG.add(headband);
+
+        // 머리띠 중앙 골드 무술 엠블럼 심볼
+        const emblemMat = isStatue ?
+          std(0xF8FAFC, { roughness: statueRoughness, metalness: 0 }) :
+          new THREE.MeshStandardMaterial({ color: lin(0xF59E0B), emissive: lin(0xF59E0B), emissiveIntensity: .4, roughness: .35 });
+        const emblem = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .025, 16), emblemMat);
+        emblem.rotation.x = Math.PI / 2;
+        emblem.position.set(0, .09, .425);
+        headG.add(emblem);
+
+        // 머리 뒤로 힘차게 휘날리는 머리띠 끈 (Headband Streamers)
+        const ribbonG = new THREE.Group();
+        ribbonG.position.set(0, .09, -.42);
+        const r1 = new THREE.Mesh(new THREE.BoxGeometry(.05, .24, .02), bandMat);
+        r1.position.set(-.04, -.10, -.06);
+        r1.rotation.set(.4, 0, .2);
+        const r2 = new THREE.Mesh(new THREE.BoxGeometry(.05, .28, .02), bandMat);
+        r2.position.set(.04, -.12, -.08);
+        r2.rotation.set(.5, 0, -.25);
+        ribbonG.add(r1, r2);
+        headG.add(ribbonG);
+        U.headbandRibbons = ribbonG;
+
+        // CHIPMUNK FOREHEAD STRIPES (다람쥐 이마 줄무늬)
+        if (!isStatue) {
+          const stripeMat = std(0x451A03, { roughness: .8, metalness: 0 });
+          [-.07, 0, .07].forEach((sx, idx) => {
+            const hStripe = new THREE.Mesh(new THREE.BoxGeometry(.026, idx === 1 ? .14 : .11, .02), stripeMat);
+            hStripe.position.set(sx, .25 + (idx === 1 ? .02 : 0), .34);
+            hStripe.rotation.x = -0.55;
+            headG.add(hStripe);
+          });
+        }
+
+        // CHUBBY CHEEKS & SNOUT (통통한 다람쥐 볼살 & 주둥이)
+        const cheekFurCol = isStatue ? 0xFFFFFF : 0xFEF3C7;
+        const cheekMat = std(cheekFurCol, { roughness: isStatue ? statueRoughness : .7, metalness: 0 });
+        [-1, 1].forEach(s => {
+          const cCheek = new THREE.Mesh(new THREE.SphereGeometry(.14, 14, 10), cheekMat);
+          cCheek.position.set(.17 * s, -.09, .28);
+          cCheek.scale.set(1.15, .85, .8);
+          headG.add(cCheek);
+        });
+
+        const snout = new THREE.Mesh(new THREE.SphereGeometry(.13, 14, 10), cheekMat);
+        snout.position.set(0, -.06, .35);
+        snout.scale.set(1.2, .8, .75);
+        headG.add(snout);
+
+        // 귀여운 다람쥐 삼각형 코
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(.032, .038, 3), std(isStatue ? 0x64748B : 0x582B09, { roughness: isStatue ? .85 : .85, metalness: 0 }));
+        nose.rotation.z = Math.PI;
+        nose.position.set(0, -.025, .435);
+        headG.add(nose);
+
+        // 다람쥐 앞니 (Cute Front Tooth)
+        if (!isStatue) {
+          const tooth = new THREE.Mesh(new THREE.BoxGeometry(.045, .04, .015), new THREE.MeshBasicMaterial({ color: 0xFFFFFF }));
+          tooth.position.set(0, -.095, .432);
+          headG.add(tooth);
+        }
+
       } else { // wizard (토끼)
         // LONG BUNNY EARS sticking up!
         [-1, 1].forEach(s => {
@@ -5493,7 +5666,7 @@
       });
 
       // MOUTH (조각된 입술 라인)
-      const mouthCol = isStatue ? 0x64748B : (type === "cyberbot" ? 0x1E293B : (type === "explorer" ? 0x78350F : 0x475569));
+      const mouthCol = isStatue ? 0x64748B : (type === "cyberbot" ? 0x1E293B : (type === "explorer" ? 0x78350F : (type === "martial" ? 0x582B09 : 0x475569)));
       const mouthMat = std(mouthCol, { roughness: isStatue ? .85 : .85, metalness: 0 });
       const mouthY = type === "cyberbot" ? -.16 : -.11;
       const mouthZ = type === "cyberbot" ? .35 : .4;
@@ -5523,6 +5696,10 @@
           U.arms[0].rotation.set(-1.35, -0.1, -0.35); // 왼손으로 친근하고 씩씩한 로봇 경례 포즈
           U.arms[1].rotation.set(0.18, 0, 0.28);
           U.head.rotation.set(-0.04, 0, 0.08);        // 살짝 갸우뚱하며 사랑스러운 로봇 표정
+        } else if (type === "martial") {
+          U.arms[1].rotation.set(-1.45, 0.25, -0.2); // 오른손으로 호쾌하게 앞으로 뻗은 당당한 무술 정권 지르기
+          U.arms[0].rotation.set(0.65, -0.25, 0.45); // 왼손은 허리춤에 기합을 모은 당당한 장권 자세
+          U.head.rotation.set(-0.04, 0.12, 0);
         } else if (type === "wizard") {
           U.arms[1].rotation.set(-1.75, 0.1, 0.48); // 마법 지팡이를 하늘 높이 치켜든 웅장한 아치메이지 포즈
           U.arms[0].rotation.set(0.38, 0, -0.38);
@@ -5579,6 +5756,9 @@
             } else if (role === "cyberbot") {
               U.tail.rotation.y = Math.sin(t * 14.0) * .35;
               U.tail.rotation.z = Math.cos(t * 14.0) * .15;
+            } else if (role === "martial") {
+              U.tail.rotation.x = Math.sin(t * 6.0) * .12;
+              U.tail.rotation.z = Math.sin(t * 4.5) * .14;
             } else if (role === "wizard") {
               U.tail.position.y = .22 + Math.abs(Math.sin(ph)) * .04;
             }
@@ -6975,6 +7155,10 @@
       U.arms[0].rotation.set(lx, 0, lz); U.arms[1].rotation.set(rx, 0, rz);
       U.head.rotation.set(headX, 0, headZ);
       if (U.tip) U.tip.material.emissiveIntensity = Math.sin(t * 4) > 0 ? .9 : .2;
+      if (U.headbandRibbons) {
+        U.headbandRibbons.rotation.x = Math.sin(t * (walk ? 10 : 3)) * (walk ? .28 : .08) + (walk ? .35 : .1);
+        U.headbandRibbons.rotation.y = Math.cos(t * (walk ? 8 : 2.5)) * .12;
+      }
       if (U.tail) {
         if (U.type === "explorer") {
           U.tail.rotation.z = Math.sin(t * 3) * .18;
@@ -6982,6 +7166,10 @@
         } else if (U.type === "cyberbot") {
           U.tail.rotation.y = Math.sin(t * (walk ? 18 : 10)) * .35;
           U.tail.rotation.z = Math.cos(t * (walk ? 18 : 10)) * .12;
+        } else if (U.type === "martial") {
+          U.tail.rotation.x = Math.sin(t * (walk ? 7 : 2.5)) * .12;
+          U.tail.rotation.z = Math.sin(t * (walk ? 5 : 2)) * .14;
+          U.tail.rotation.y = Math.cos(t * (walk ? 4 : 1.8)) * .08;
         } else if (U.type === "wizard") {
           U.tail.position.y = .22 + (walk ? Math.abs(Math.sin(ph)) * .04 : 0);
         }
@@ -7136,7 +7324,7 @@
       updateRolePrefixUI();
       input.addEventListener("input", e => {
         let val = e.target.value;
-        const clean = val.replace(/^(탐험가|로보트|로봇|마법사)\s*/g, "").replace(/\s*\([^)]*\)/g, "").trim();
+        const clean = val.replace(/^(탐험가|로보트|로봇|마법사|무술가)\s*/g, "").replace(/\s*\([^)]*\)/g, "").trim();
         G.customName = clean;
         save({ customHeroName: clean });
         renderHeroes();
@@ -7145,7 +7333,7 @@
       });
     }
     function renderHeroes() {
-      const heroTypes = ["explorer", "cyberbot", "wizard"];
+      const heroTypes = ["explorer", "cyberbot", "wizard", "martial"];
       $("heroRow").innerHTML = heroTypes.map(id => {
         const fullName = getHeroFullName(id, true);
         return `
@@ -7165,7 +7353,7 @@
       updateRolePrefixUI();
     }
     function showTitle() {
-      G.customName = (load().customHeroName || "").replace(/^(탐험가|로보트|로봇|마법사)\s*/g, "").replace(/\s*\([^)]*\)/g, "").trim();
+      G.customName = (load().customHeroName || "").replace(/^(탐험가|로보트|로봇|마법사|무술가)\s*/g, "").replace(/\s*\([^)]*\)/g, "").trim();
       initHeroNameInput();
       setStageVisuals(1);
       renderHeroes();
