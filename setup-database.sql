@@ -41,7 +41,17 @@ FOR SELECT
 TO public
 USING (true);
 
--- (참고) games 테이블도 누구나 조회할 수 있도록 RLS 정책 확인
+-- 4. 게임 기록 삭제(DELETE) 권한 허용
+-- 관리자 페이지(admin.html)에서 특정 기록을 삭제할 수 있도록 허용합니다.
+DROP POLICY IF EXISTS "Allow public delete game_records" ON public.game_records;
+
+CREATE POLICY "Allow public delete game_records"
+ON public.game_records
+FOR DELETE
+TO public
+USING (true);
+
+-- 5. (참고) games 테이블도 누구나 조회할 수 있도록 RLS 정책 확인
 ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow public read games" ON public.games;

@@ -111,7 +111,43 @@
     .btn-success:hover { background: #059669; }
     .btn-outline { background: white; border-color: var(--border); color: var(--text-main); }
     .btn-outline:hover { background: #F8FAFC; border-color: #CBD5E1; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-danger:hover { background: #DC2626; }
+    .btn-danger-outline { background: white; border-color: #FCA5A5; color: var(--danger); }
+    .btn-danger-outline:hover { background: #FEF2F2; border-color: var(--danger); }
     .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+    /* 토스트 알림 */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast-message {
+      background: #1E293B;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toastFade 3.2s forwards;
+      pointer-events: auto;
+    }
+    @keyframes toastFade {
+      0% { opacity: 0; transform: translateY(12px); }
+      12% { opacity: 1; transform: translateY(0); }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-12px); }
+    }
 
     /* 본문 컨테이너 */
     main {
@@ -493,7 +529,7 @@
             <th>점수</th>
             <th>소요 시간</th>
             <th>시도 횟수</th>
-            <th>상세</th>
+            <th style="width: 140px; text-align: center;">관리</th>
           </tr>
         </thead>
         <tbody id="recordsTableBody">
@@ -519,7 +555,8 @@
         <button type="button" onclick="closeDetailModal()" style="border:none; background:none; font-size:22px; cursor:pointer;">&times;</button>
       </div>
       <div id="detailContent"></div>
-      <div style="margin-top:20px; text-align:right;">
+      <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+        <button type="button" class="btn btn-danger-outline btn-sm" onclick="deleteRecordFromModal()">🗑️ 이 기록 삭제</button>
         <button type="button" class="btn btn-outline btn-sm" onclick="closeDetailModal()">닫기</button>
       </div>
     </div>
@@ -535,6 +572,8 @@
     let allRecords = [];
     let currentFilteredRecords = [];
     let currentViewMode = 'all'; // 'all' | 'best'
+    let currentModalRecord = null;
+    let isDeleting = false;
     let gamesMap = {
       1: { slug: 'word-island', title: '낱말 탐험섬' },
       2: { slug: 'knowledge-maze', title: '지식 탐험대' }
@@ -803,7 +842,10 @@
             <td>${duration}</td>
             <td>${r.attempts ? `${r.attempts}회` : '1회'}</td>
             <td>
-              <button type="button" class="btn btn-outline btn-sm" onclick="showDetailByIndex(${index})">보기</button>
+              <div style="display:flex; gap:6px; justify-content:center;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="showDetailByIndex(${index})" title="상세 내역 보기">보기</button>
+                <button type="button" class="btn btn-danger-outline btn-sm" onclick="deleteRecordPrompt(${index})" title="이 기록 삭제하기">삭제</button>
+              </div>
             </td>
           </tr>`;
       }).join('');
@@ -823,6 +865,7 @@
 
     // 상세 보기 모달
     function showDetail(record) {
+      currentModalRecord = record;
       const content = document.getElementById('detailContent');
       const gameInfo = gamesMap[record.game_id] || { title: `게임 #${record.game_id}` };
       const gameTitle = gameInfo.title;
@@ -853,7 +896,96 @@
     }
 
     function closeDetailModal() {
+      currentModalRecord = null;
       document.getElementById('detailModal').style.display = 'none';
+    }
+
+    // 토스트 안내 메시지
+    function showToast(message, type = 'info') {
+      let container = document.getElementById('toastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      toast.className = 'toast-message';
+      if (type === 'error') {
+        toast.style.background = '#991B1B';
+      } else if (type === 'success') {
+        toast.style.background = '#065F46';
+      }
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 3200);
+    }
+
+    // 기록 삭제 확인 및 실행
+    async function deleteRecordPrompt(index) {
+      const record = currentFilteredRecords[index];
+      if (!record) return;
+      await confirmAndDelete(record);
+    }
+
+    async function deleteRecordFromModal() {
+      if (!currentModalRecord) return;
+      await confirmAndDelete(currentModalRecord);
+    }
+
+    async function confirmAndDelete(record) {
+      if (isDeleting) return;
+      if (!record || record.id === undefined || record.id === null) {
+        alert('삭제할 기록의 식별자(id)가 없습니다.');
+        return;
+      }
+
+      const dateStr = record.created_at ? new Date(record.created_at).toLocaleString('ko-KR') : '';
+      const gameInfo = gamesMap[record.game_id] || { title: `게임 #${record.game_id}` };
+      const studentDesc = `[${record.school_name || '학교 미지정'}] ${record.grade}학년 ${record.class_number}반 ${record.student_number}번\n게임: ${gameInfo.title} | 점수: ${(record.score || 0).toLocaleString()}점 | 일시: ${dateStr}`;
+
+      const confirmed = confirm(
+        `[⚠️ 기록 삭제 확인]\n\n선택한 학생의 플레이 기록을 삭제하시겠습니까?\n\n${studentDesc}\n\n※ 삭제된 기록은 데이터베이스에서 완전히 삭제되며 복구할 수 없습니다.`
+      );
+      if (!confirmed) return;
+
+      isDeleting = true;
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/game_records?id=eq.${encodeURIComponent(record.id)}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_PUBLISHABLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '');
+          throw new Error(`삭제 요청 실패 (HTTP ${res.status}): ${errText}`);
+        }
+
+        const deletedData = await res.json().catch(() => []);
+        if (Array.isArray(deletedData) && deletedData.length === 0) {
+          alert('⚠️ 데이터베이스에서 기록이 삭제되지 않았습니다.\n\n원인: Supabase 데이터베이스의 Row Level Security (RLS) 정책에서 DELETE(삭제) 권한이 허용되지 않았을 가능성이 높습니다.\n\n화면 하단의 [필수 SQL 복사하기]를 클릭하신 후 Supabase SQL Editor에서 실행해 주시면 정상적으로 삭제 권한이 부여됩니다.');
+          return;
+        }
+
+        // 성공적으로 삭제됨: 메모리 배열에서 제거 후 뷰 갱신
+        allRecords = allRecords.filter(r => r.id !== record.id);
+        closeDetailModal();
+        updateFilterDropdowns();
+        renderFiltered();
+        showToast('✅ 학생 기록이 안전하게 삭제되었습니다.', 'success');
+      } catch (err) {
+        console.error('기록 삭제 에러:', err);
+        alert(`기록 삭제 중 오류가 발생했습니다:\n${err.message}`);
+      } finally {
+        isDeleting = false;
+      }
     }
 
     // 엑셀(CSV) 내보내기 (한글 깨짐 방지 UTF-8 BOM 포함)
@@ -895,10 +1027,13 @@
 
     // Supabase RLS SQL 복사 헬퍼
     function copyRlsSql(btn) {
-      const sql = `-- Supabase game_records RLS SELECT 허용 정책
+      const sql = `-- Supabase game_records RLS SELECT 및 DELETE 허용 정책
 ALTER TABLE public.game_records ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public read access on game_records" ON public.game_records;
 CREATE POLICY "Allow public read access on game_records" ON public.game_records FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow public delete game_records" ON public.game_records;
+CREATE POLICY "Allow public delete game_records" ON public.game_records FOR DELETE TO public USING (true);
 
 ALTER TABLE public.games ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow public read games" ON public.games;
