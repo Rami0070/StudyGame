@@ -691,7 +691,7 @@
       <div class="step-title"><b>2</b>어떻게 놀까?</div>
       <div class="mode-row">
         <button type="button" class="jelly leaf mode" onclick="startGame('free')">🧭 천천히 탐험<small>스테이지별 10장 모아 통과</small></button>
-        <button type="button" class="jelly tomato mode" onclick="startGame('timed')">⏱ 3분 도전<small>3분 동안 많이 모으기</small></button>
+        <button type="button" class="jelly tomato mode" onclick="startGame('timed')">⏱ 5분 도전<small>5분 동안 많이 모으기</small></button>
       </div>
       <div class="start-foot">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -749,6 +749,11 @@
             <input id="rankName" maxlength="12" placeholder="내 이름" autocomplete="off" aria-label="순위표에 올릴 이름">
             <button type="submit" class="jelly sun" style="font-size:20px;min-height:50px;padding:10px 18px">🏅 순위 올리기</button>
           </form>
+          <div id="sharedFieldActionBox" class="hidden" style="margin:12px 0 8px;text-align:center;">
+            <button type="button" id="startSharedFieldBtn" class="jelly sun" onclick="enterSharedField()" style="font-size:20px;min-height:52px;padding:10px 18px;width:100%;box-shadow:0 5px 0 #D97706;background:#F59E0B">
+              🌟 모두 한 필드에 모여 함께 풀기 (30문제)
+            </button>
+          </div>
           <ol id="rankList"></ol>
         </div>
         <div class="result-right-col">
@@ -1151,7 +1156,7 @@
 
     const REGIONS = ZONES;
     const ISLAND_R = 70;
-    const TIME_LIMIT = 180;
+    const TIME_LIMIT = 300;
 
     /* ───────────── 저장 ───────────── */
     const STORE = "nalmal-island.v1";
@@ -1225,11 +1230,11 @@
     /* ───────────── 3D 기본 ───────────── */
     let scene, camera, renderer, sun, hemiLight, ambientLight, sky, moonGroup, starsGroup, sun3DGroup = null, hero, arrow, cloudMat;
     let stage1Group = null, stage2Group = null, stage3Group = null;
-    let stage2CompanionsGroup = null, stage3CompanionsGroup = null;
+    let stage2CompanionsGroup = null, stage3CompanionsGroup = null, sharedCompanionsGroup = null;
     let stage3CarouselRotor = null, schoolFlagMesh = null;
     const duckBoats = [];
     const stage1Animators = [], stage2Animators = [], stage3Animators = [];
-    const stage2CompanionAnimators = [], stage3CompanionAnimators = [];
+    const stage2CompanionAnimators = [], stage3CompanionAnimators = [], sharedCompanionAnimators = [];
     const commonColliders = [], commonBoxes = [];
     const stage1Colliders = [], stage1Boxes = [];
     const stage2Colliders = [], stage2Boxes = [];
@@ -1325,6 +1330,7 @@
       stage3Group = new THREE.Group(); scene.add(stage3Group);
       stage2CompanionsGroup = new THREE.Group(); stage2Group.add(stage2CompanionsGroup);
       stage3CompanionsGroup = new THREE.Group(); stage3Group.add(stage3CompanionsGroup);
+      sharedCompanionsGroup = new THREE.Group(); scene.add(sharedCompanionsGroup);
       stage2Group.visible = false;
       stage3Group.visible = false;
       buildWorld();
@@ -5818,6 +5824,125 @@
       // 스테이지 2와 스테이지 3의 돌아다니는 NPC는 삭제 처리됨
     }
 
+    function spawnSharedCompanions() {
+      if (!sharedCompanionsGroup) {
+        sharedCompanionsGroup = new THREE.Group();
+        scene.add(sharedCompanionsGroup);
+      }
+      while (sharedCompanionsGroup.children.length > 0) {
+        sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
+      }
+      sharedCompanionAnimators.length = 0;
+
+      const s = load(), ranks = s.ranks || {};
+      const timedRanks = ranks["timed"] || [];
+      const freeRanks = ranks["free"] || [];
+      const allRanks = [...timedRanks, ...freeRanks];
+
+      const roles = ["explorer", "cyberbot", "wizard", "martial"];
+      const defaultComps = [
+        { role: "wizard", name: "마법사 루나" },
+        { role: "cyberbot", name: "로봇 볼트" },
+        { role: "martial", name: "무술가 카이" },
+        { role: "explorer", name: "탐험가 도로" }
+      ];
+
+      const companionList = [];
+      const myFullName = getHeroFullName();
+      const usedNames = new Set([myFullName]);
+
+      allRanks.forEach(r => {
+        if (r.name && !usedNames.has(r.name) && companionList.length < 5) {
+          usedNames.add(r.name);
+          companionList.push({ role: r.hero || roles[companionList.length % roles.length], name: r.name });
+        }
+      });
+
+      defaultComps.forEach(d => {
+        if (companionList.length < 4 && !usedNames.has(d.name)) {
+          usedNames.add(d.name);
+          companionList.push(d);
+        }
+      });
+
+      const spawnZones = ["village", "plaza", "forest", "park", "center"];
+
+      companionList.forEach((compData, idx) => {
+        const comp = createCompanionHero(compData.role);
+        const mesh = comp.mesh;
+
+        if (mesh.userData.nameSprite) mesh.remove(mesh.userData.nameSprite);
+        const nameSp = makeNameSprite(compData.name, compData.role);
+        mesh.add(nameSp);
+        mesh.userData.nameSprite = nameSp;
+
+        const zoneKey = spawnZones[idx % spawnZones.length];
+        const spot = freeSpot(zoneKey, true);
+        mesh.position.copy(spot);
+        sharedCompanionsGroup.add(mesh);
+
+        const walker = {
+          phase: Math.random() * Math.PI * 2,
+          targetPos: freeSpot(zoneKey, true),
+          speed: 2.8 + Math.random() * 1.2,
+          idleTimer: 0,
+          huntCooldown: 8 + Math.random() * 8
+        };
+
+        sharedCompanionAnimators.push((dt, t) => {
+          comp.anim(dt, t, walker);
+
+          if (walker.idleTimer > 0) {
+            walker.idleTimer -= dt;
+            return;
+          }
+
+          walker.phase += dt * (walker.speed * 2.2);
+          walker.huntCooldown -= dt;
+
+          if (walker.huntCooldown <= 0) {
+            const openCards = G.cards.filter(c => !c.done && c !== G.activeCard);
+            if (openCards.length > 0) {
+              const cToPick = openCards[Math.floor(Math.random() * openCards.length)];
+              walker.targetPos = cToPick.mesh.position.clone();
+            }
+          }
+
+          const dx = walker.targetPos.x - mesh.position.x;
+          const dz = walker.targetPos.z - mesh.position.z;
+          const dist = Math.hypot(dx, dz);
+
+          if (dist > 0.6) {
+            const dirX = dx / dist, dirZ = dz / dist;
+            mesh.position.x += dirX * walker.speed * dt;
+            mesh.position.z += dirZ * walker.speed * dt;
+            mesh.rotation.y = Math.atan2(dirX, dirZ);
+
+            if (walker.huntCooldown <= 0 && dist < 1.4) {
+              const nearbyCard = G.cards.find(c => !c.done && c !== G.activeCard && c.mesh.position.distanceTo(mesh.position) < 1.8);
+              if (nearbyCard) {
+                walker.huntCooldown = 16.0 + Math.random() * 12.0;
+                walker.idleTimer = 1.5;
+                companionCollectCard(compData.role, mesh, nearbyCard);
+                G.got++;
+                updateHud();
+                if (G.got >= 30) {
+                  setTimeout(() => endGame(true), 1500);
+                }
+              }
+            }
+          } else {
+            const nextZone = spawnZones[Math.floor(Math.random() * spawnZones.length)];
+            walker.targetPos = freeSpot(nextZone, true);
+            walker.idleTimer = 1.0 + Math.random() * 2.0;
+            if (walker.huntCooldown <= 0) {
+              walker.huntCooldown = 12.0 + Math.random() * 8.0;
+            }
+          }
+        });
+      });
+    }
+
     // 머리 위 화살표: 가장 가까운 카드 방향
     function makeArrow() {
       const g = new THREE.Group();
@@ -5896,8 +6021,25 @@
       return g;
     }
 
-    function freeSpot(zoneKey) {
-      if (zoneKey === "center") zoneKey = "forest"; // 중앙 광장은 카드 배치 대상 제외
+    function freeSpot(zoneKey, isSharedMode = false) {
+      if (zoneKey === "center") {
+        if (!isSharedMode) {
+          zoneKey = "forest";
+        } else {
+          for (let t = 0; t < 200; t++) {
+            const a = Math.random() * Math.PI * 2;
+            const r = 5.5 + Math.random() * 11.5;
+            const x = Math.cos(a) * r, zz = Math.sin(a) * r;
+            if (Math.hypot(x - 0, zz - 4) < 3.2) continue;
+            if (colliders.some(c => Math.hypot(c.x - x, c.z - zz) < c.r + 1.3)) continue;
+            if (boxes.some(b => x > b.minx - 1.3 && x < b.maxx + 1.3 && zz > b.minz - 1.3 && zz < b.maxz + 1.3)) continue;
+            if (G.cards.some(c => !c.done && c.mesh && c.mesh.position.distanceTo(new THREE.Vector3(x, 0, zz)) < 4.8)) continue;
+            return new THREE.Vector3(x, 0, zz);
+          }
+          const safeAngle = Math.random() * Math.PI * 2;
+          return new THREE.Vector3(Math.cos(safeAngle) * 9.0, 0, Math.sin(safeAngle) * 9.0);
+        }
+      }
       const z = ZONES[zoneKey] || ZONES.forest || { x: -34, z: -30, r: 18, rMin: 3.5, rMax: 16 };
       const rMin = z.rMin || (zoneKey === "village" ? 9.8 : (zoneKey === "plaza" ? 4.8 : 3.0));
       const rMax = z.rMax || (z.r - 2.0);
@@ -5906,12 +6048,12 @@
         const r = rMin + Math.random() * (rMax - rMin);
         const x = z.x + Math.cos(a) * r, zz = z.z + Math.sin(a) * r;
 
-        // 중앙 광장 내부 및 경계 반경(r + 2.0m) 내에는 절대 카드가 생성되지 않도록 보호
-        if (Math.hypot(x - ZONES.center.x, zz - ZONES.center.z) < ZONES.center.r + 2.0) continue;
+        // 중앙 광장 내부 및 경계 반경(r + 2.0m) 내에는 일반 모드일 때만 생성 방지
+        if (!isSharedMode && Math.hypot(x - ZONES.center.x, zz - ZONES.center.z) < ZONES.center.r + 2.0) continue;
         if (Math.hypot(x - 0, zz - 4) < 3.2) continue;
         if (colliders.some(c => Math.hypot(c.x - x, c.z - zz) < c.r + 1.3)) continue;
         if (boxes.some(b => x > b.minx - 1.3 && x < b.maxx + 1.3 && zz > b.minz - 1.3 && zz < b.maxz + 1.3)) continue;
-        if (G.cards.some(c => !c.done && c.mesh && c.mesh.position.distanceTo(new THREE.Vector3(x, 0, zz)) < 5.2)) continue;
+        if (G.cards.some(c => !c.done && c.mesh && c.mesh.position.distanceTo(new THREE.Vector3(x, 0, zz)) < 4.8)) continue;
         return new THREE.Vector3(x, 0, zz);
       }
       const safeAngle = Math.random() * Math.PI * 2;
@@ -6277,16 +6419,16 @@
     }
 
     function spawnSingleNewCard() {
-      // 중앙 광장(center)은 문제카드 생성 대상에서 제외 (4개 모험 구역에만 생성)
-      const regionsList = ["forest", "village", "plaza", "park"];
+      // 중앙 광장(center)은 일반 모드에서는 제외, 공유 필드 모드에서는 전체 포함
+      const regionsList = G.mode === "shared" ? ["forest", "village", "plaza", "park", "center"] : ["forest", "village", "plaza", "park"];
       const regKey = regionsList[Math.floor(Math.random() * regionsList.length)];
-      const zoneWords = ZONES[regKey].words || VOCAB_PARK_ALL;
+      const zoneWords = (regKey === "center" ? ALL_VOCAB : (ZONES[regKey].words || VOCAB_PARK_ALL));
       const learnedSet = new Set(G.learned.map(l => l.word));
 
       let diff = "mid";
       if (G.stage === 2) {
         diff = Math.random() < 0.5 ? "low" : "mid";
-      } else if (G.stage === 3) {
+      } else if (G.stage === 3 || G.mode === "shared") {
         const r = Math.random();
         if (r < 0.34) { diff = "high"; }
         else if (r < 0.67) { diff = "mid"; }
@@ -6313,7 +6455,7 @@
         lastType: null
       };
       card.mesh = makeCardMesh(diff); // 겉면으로는 구분 불가능 (일반 카드 외형 유지)
-      card.mesh.position.copy(freeSpot(regKey));
+      card.mesh.position.copy(freeSpot(regKey, G.mode === "shared"));
       G.cards.push(card);
       scene.add(card.mesh);
       return card;
@@ -6323,8 +6465,6 @@
       G.cards.forEach(c => scene.remove(c.mesh));
       G.cards = [];
 
-      // 중앙 광장(center)은 카드가 스폰되지 않으며, 4개 모험 구역(다문화 숲, 다문화 마을, 다문화 광장, 다문화 놀이터)에만 고루 분산
-      const regionsList = ["forest", "village", "plaza", "park"];
       const learnedSet = new Set(G.learned.map(l => l.word));
 
       const selectZoneWords = (pool, count) => {
@@ -6334,6 +6474,50 @@
       };
 
       let cardCount = 0;
+
+      if (G.mode === "shared") {
+        // 다 함께 모인 필드 모드: 필드 전체(5개 구역)에 고루 퍼지며 총 30개 문제 카드 생성
+        const regionsList = ["forest", "village", "plaza", "park", "center"];
+        regionsList.forEach(regKey => {
+          const zoneWords = (regKey === "center" ? ALL_VOCAB : (ZONES[regKey].words || VOCAB_PARK_ALL));
+          const lowPool = zoneWords.filter(w => w.diff === "low");
+          const midPool = zoneWords.filter(w => w.diff === "mid");
+          const highPool = zoneWords.filter(w => w.diff === "high");
+          const lowPicked = selectZoneWords(lowPool.length ? lowPool : zoneWords, 2);
+          const midPicked = selectZoneWords(midPool.length ? midPool : zoneWords, 2);
+          const highPicked = selectZoneWords(highPool.length ? highPool : zoneWords, 2);
+          const cardItems = shuffle([
+            ...lowPicked.map(w => ({ diff: "low", word: w })),
+            ...midPicked.map(w => ({ diff: "mid", word: w })),
+            ...highPicked.map(w => ({ diff: "high", word: w }))
+          ]);
+
+          cardItems.forEach(item => {
+            const card = {
+              region: regKey,
+              zone: regKey,
+              word: item.word,
+              diff: item.diff,
+              gold: (cardCount % 3 === 0),
+              done: false,
+              cool: 0,
+              lastType: null
+            };
+            cardCount++;
+            card.mesh = makeCardMesh(item.diff);
+            card.mesh.position.copy(freeSpot(regKey, true));
+            G.cards.push(card);
+            scene.add(card.mesh);
+          });
+        });
+
+        G.total = 30;
+        G.stageGoal = 30;
+        return;
+      }
+
+      // 중앙 광장(center)은 카드가 스폰되지 않으며, 4개 모험 구역(다문화 숲, 다문화 마을, 다문화 광장, 다문화 놀이터)에만 고루 분산
+      const regionsList = ["forest", "village", "plaza", "park"];
       regionsList.forEach(regKey => {
         const zoneWords = ZONES[regKey].words || VOCAB_PARK_ALL;
         let cardItems = [];
@@ -6542,8 +6726,8 @@
 
     const OPT_COLORS = ["sea", "tomato", "leaf", "grape"];
     function openQuiz(card) {
-      // 중앙광장(ZONES.center) 내부에서는 문제가 팝업되지 않음
-      if (Math.hypot(P.pos.x - ZONES.center.x, P.pos.z - ZONES.center.z) < ZONES.center.r) return;
+      // 중앙광장(ZONES.center) 내부에서는 일반 모드일 때만 문제 팝업 제외 (공유 필드 모드는 전체 활성화)
+      if (G.mode !== "shared" && Math.hypot(P.pos.x - ZONES.center.x, P.pos.z - ZONES.center.z) < ZONES.center.r) return;
       G.activeCard = card; G.attempts = 0; G.hintUsed = false; G.locked = false; G.paused = true;
       input.jx = input.jy = 0;
       const q = card.q = makeQuestion(card);
@@ -6675,7 +6859,13 @@
       book[card.word.word] = (book[card.word.word] || 0) + 1;
       save({ book });
       emote(card.diff === "high" ? "cheer" : G.combo >= 3 ? "dance" : "happy");
-      if (G.stageGot >= 10) {
+      if (G.mode === "shared") {
+        if (G.got >= 30) {
+          setTimeout(() => endGame(true), 1500);
+        } else {
+          notice(`정답! 다 함께 문제카드를 모으고 있어요! (총 ${G.got} / 30장)`);
+        }
+      } else if (G.stageGot >= 10) {
         if (G.stage < 3) {
           setTimeout(() => advanceStage(G.stage + 1), 1200);
         } else {
@@ -6702,9 +6892,15 @@
     /* ───────────── HUD ───────────── */
     function updateHud(bump) {
       $("scoreText").textContent = G.score;
-      $("cardText").textContent = `${G.stageGot} / 10`;
-      const sp = $("stagePillText");
-      if (sp) sp.textContent = `스테이지 ${G.stage} / 3`;
+      if (G.mode === "shared") {
+        $("cardText").textContent = `${G.got} / 30`;
+        const sp = $("stagePillText");
+        if (sp) sp.textContent = `다 함께 필드 (${G.got} / 30)`;
+      } else {
+        $("cardText").textContent = `${G.stageGot} / 10`;
+        const sp = $("stagePillText");
+        if (sp) sp.textContent = `스테이지 ${G.stage} / 3`;
+      }
       const cb = $("comboBadge");
       if (G.combo >= 2) { cb.textContent = G.combo >= 3 ? `${G.combo}연속 · 점수 2배!` : `${G.combo}연속!`; cb.classList.remove("hidden"); if (bump) { cb.classList.remove("bump"); void cb.offsetWidth; cb.classList.add("bump"); } }
       else cb.classList.add("hidden");
@@ -6725,8 +6921,8 @@
         x.lineWidth = 5;
         x.beginPath(); x.arc(px, pz, 8.5, 0, Math.PI * 2); x.fill(); x.stroke();
       });
-      // 동료 영웅들 (스테이지 2와 스테이지 3 레이더 표시)
-      const activeCompGroup = G.stage === 2 ? stage2CompanionsGroup : (G.stage === 3 ? stage3CompanionsGroup : null);
+      // 동료 영웅들 (공유 필드 또는 스테이지 2, 3 레이더 표시)
+      const activeCompGroup = G.mode === "shared" ? sharedCompanionsGroup : (G.stage === 2 ? stage2CompanionsGroup : (G.stage === 3 ? stage3CompanionsGroup : null));
       if (activeCompGroup && activeCompGroup.children.length > 0) {
         activeCompGroup.children.forEach(comp => {
           const cxPos = c + comp.position.x * k, czPos = c + comp.position.z * k;
@@ -7298,17 +7494,27 @@
     function loop() {
       requestAnimationFrame(loop);
       const dt = Math.min(clock.getDelta(), .05), t = clock.elapsedTime;
-      if (G.playing && !G.paused) {
-        updatePlayer(dt);
-        G.time += dt;
-        if (G.mode === "timed") {
-          const left = Math.max(0, TIME_LIMIT - G.time);
-          $("timerText").textContent = fmt(left);
-          if (left <= 0) endGame(false);
+      if (G.playing) {
+        if (!isOpen("pauseModal")) {
+          G.time += dt;
+          if (G.mode === "timed") {
+            const left = Math.max(0, TIME_LIMIT - G.time);
+            $("timerText").textContent = fmt(left);
+            if (left <= 0) {
+              hide("quizModal");
+              endGame(false);
+            }
+          }
+        }
+        if (!G.paused) {
+          updatePlayer(dt);
         }
       }
       else if (hero) animateHero(dt);
       updateWorld(t, dt);
+      if (G.mode === "shared" && sharedCompanionAnimators.length > 0) {
+        sharedCompanionAnimators.forEach(fn => fn(dt, t));
+      }
       updatePinSpotlight(t);
       updateCards(dt, t);
       updateFx(dt);
@@ -7373,6 +7579,16 @@
       show("startModal");
     }
     function startGame(mode) {
+      if (mode === "shared") {
+        enterSharedField();
+        return;
+      }
+      if (sharedCompanionsGroup) {
+        while (sharedCompanionsGroup.children.length > 0) {
+          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
+        }
+        sharedCompanionAnimators.length = 0;
+      }
       ["startModal", "resultModal", "pauseModal", "quizModal", "bookModal"].forEach(hide);
       G.mode = mode; G.score = 0; G.combo = 0; G.got = 0; G.stage = 1; G.stageGot = 0; G.stageHintsRemaining = 5; G.total = 30; G.time = 0; G.totalWrongAttempts = 0; G.missed = new Set(); G.learned = []; G.saved = false;
       scene.remove(hero); hero = makeHero(G.hero); scene.add(hero);
@@ -7385,13 +7601,70 @@
       updateHud();
       G.playing = true; G.paused = false;
       $("app").classList.add("play");
-      showStageBanner("게임 스타트!", "10장의 카드를 찾아 모두 모아보세요!");
+      showStageBanner(mode === "timed" ? "5분 도전 시작!" : "게임 스타트!", mode === "timed" ? "5분 동안 최대한 많은 카드를 모아보세요!" : "10장의 카드를 찾아 모두 모아보세요!");
       notice("바닥의 반짝이 길을 따라가요!");
+      sfx("get");
+    }
+    function enterSharedField() {
+      if (sharedCompanionsGroup) {
+        while (sharedCompanionsGroup.children.length > 0) {
+          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
+        }
+        sharedCompanionAnimators.length = 0;
+      }
+      ["startModal", "resultModal", "pauseModal", "quizModal", "bookModal"].forEach(hide);
+      G.mode = "shared";
+      G.score = 0;
+      G.combo = 0;
+      G.got = 0;
+      G.stage = 1;
+      G.stageGot = 0;
+      G.stageHintsRemaining = 99;
+      G.total = 30;
+      G.time = 0;
+      G.totalWrongAttempts = 0;
+      G.missed = new Set();
+      G.learned = [];
+      G.saved = false;
+
+      scene.remove(hero);
+      hero = makeHero(G.hero);
+      scene.add(hero);
+
+      P.pos.set(0, 0, 4);
+      P.vy = 0;
+      P.face = Math.PI;
+      camYaw = 0;
+      camPitch = .5;
+
+      setStageVisuals(1);
+      spawnCards();
+      spawnSharedCompanions();
+
+      $("timerPill").classList.add("hidden");
+      updateHud();
+      G.playing = true;
+      G.paused = false;
+      $("app").classList.add("play");
+
+      showStageBanner("다 함께 필드 모험!", "필드 전체에 퍼진 30개의 문제 카드를 모두 모아보세요!");
+      notice("✨ 친구들과 함께 한 필드에 모였습니다! 30개의 카드를 찾아보세요!");
       sfx("get");
     }
     function openPause() { if (!G.playing || isOpen("quizModal")) return; G.paused = true; syncSound(); show("pauseModal"); }
     function closePause() { hide("pauseModal"); G.paused = false; }
-    function toTitle() { G.playing = false; G.paused = true; $("app").classList.remove("play"); ["pauseModal", "resultModal", "quizModal"].forEach(hide); showTitle(); }
+    function toTitle() {
+      G.playing = false; G.paused = true;
+      if (sharedCompanionsGroup) {
+        while (sharedCompanionsGroup.children.length > 0) {
+          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
+        }
+        sharedCompanionAnimators.length = 0;
+      }
+      $("app").classList.remove("play");
+      ["pauseModal", "resultModal", "quizModal"].forEach(hide);
+      showTitle();
+    }
 
     function endGame(all) {
       if (!G.playing) return;
@@ -7400,12 +7673,16 @@
         window.submitStudyGameRecord({ gameSlug: "word-island", score: G.score, durationSeconds: G.mode === "timed" ? Math.min(G.time, TIME_LIMIT) : G.time, attempts: G.totalWrongAttempts || 0, details: { mode: G.mode, cardsCollected: G.got, totalCards: G.total, stage: G.stage } });
       }
       hide("quizModal"); sfx("end");
-      $("resultTitle").textContent = all ? (G.stage >= 3 && G.stageGot >= 10 ? "3개 스테이지 모두 클리어!" : "다 모았어요!") : "시간 끝!";
+      $("resultTitle").textContent = all ? (G.mode === "shared" ? "🎉 30문제 모두 완료!" : (G.stage >= 3 && G.stageGot >= 10 ? "3개 스테이지 모두 클리어!" : "다 모았어요!")) : "시간 끝!";
       $("resultScore").textContent = G.score;
-      $("resultCards").textContent = `${G.got} / ${G.total} (${G.stage}개 스테이지)`;
+      $("resultCards").textContent = G.mode === "shared" ? `${G.got} / 30 (다 함께 필드)` : `${G.got} / ${G.total} (${G.stage}개 스테이지)`;
       $("resultTime").textContent = fmt(G.mode === "timed" ? Math.min(G.time, TIME_LIMIT) : G.time);
       $("rankName").value = load().lastName || getHeroFullName();
-      $("rankForm").classList.toggle("hidden", G.score <= 0);
+      $("rankForm").classList.toggle("hidden", G.score <= 0 || G.mode === "shared");
+      const actionBox = $("sharedFieldActionBox");
+      if (actionBox) {
+        actionBox.classList.toggle("hidden", G.mode !== "timed" && G.mode !== "shared");
+      }
       renderRanks(null);
       const list = $("reviewWordList"); list.innerHTML = "";
       G.learned.forEach(l => {
@@ -7420,7 +7697,7 @@
     function renderRanks(myId) {
       const ranks = (load().ranks || {})[G.mode] || [];
       $("rankList").innerHTML = ranks.length ? ranks.map((r, i) => `<li class="${r.id === myId ? "me" : ""}"><span class="rk">${i + 1}</span><span class="art">${art(r.hero)}</span><span>${esc(r.name)}</span><span class="sc">${r.score}</span></li>`).join("")
-        : `<li style="grid-template-columns:1fr;text-align:center;color:var(--ink-soft)">${G.mode === "timed" ? "3분 도전" : "천천히 탐험"} 순위가 아직 없어요</li>`;
+        : `<li style="grid-template-columns:1fr;text-align:center;color:var(--ink-soft)">${G.mode === "timed" ? "5분 도전" : "천천히 탐험"} 순위가 아직 없어요</li>`;
     }
     $("rankForm").addEventListener("submit", e => {
       e.preventDefault();
@@ -7434,6 +7711,15 @@
       G.saved = true; $("rankForm").classList.add("hidden");
       renderRanks(me.id);
       toast(ranks[G.mode].some(r => r.id === me.id) ? "순위표에 올랐어요!" : "아쉽게 5등 안에 못 들었어요");
+
+      if (G.mode === "timed") {
+        const actionBox = $("sharedFieldActionBox");
+        if (actionBox) actionBox.classList.remove("hidden");
+        notice("순위 등록 완료! 모두 한 필드에 모여 30문제를 함께 풉니다!");
+        setTimeout(() => {
+          if (isOpen("resultModal")) enterSharedField();
+        }, 1500);
+      }
     });
 
     function openBook() {
@@ -7485,10 +7771,13 @@
     /* ───────────── 시작 ───────────── */
     async function boot() {
       try {
-        await Promise.all([
-          document.fonts.load("80px 'BMJUA'", "다문화 숲 다문화 마을 다문화 광장 다문화 놀이터 중앙 광장"),
-          document.fonts.load("80px 'Jua'", "다문화 숲 다문화 마을 다문화 광장 다문화 놀이터 중앙 광장"),
-          document.fonts.ready
+        await Promise.race([
+          Promise.all([
+            document.fonts.load("80px 'BMJUA'", "다문화 숲 다문화 마을 다문화 광장 다문화 놀이터 중앙 광장"),
+            document.fonts.load("80px 'Jua'", "다문화 숲 다문화 마을 다문화 광장 다문화 놀이터 중앙 광장"),
+            document.fonts.ready
+          ]),
+          new Promise(r => setTimeout(r, 1200))
         ]);
       } catch (e) {}
       try {
@@ -7497,7 +7786,10 @@
         syncSound();
         showTitle();
         loop();
-        setTimeout(() => $("loadingScreen").remove(), 200);
+        setTimeout(() => {
+          const ls = $("loadingScreen");
+          if (ls) ls.remove();
+        }, 200);
       } catch (err) {
         console.error(err);
         $("loadingScreen").innerHTML = "3D 화면을 열지 못했어요.<br><span class='small' style='font-size:16px'>인터넷 연결을 확인하고 새로고침해 주세요.</span>";
