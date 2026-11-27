@@ -271,7 +271,6 @@
           <span id="modalScenarioIntro" class="hidden"></span>
         </div>
         <div style="display:flex;gap:10px;align-items:center;">
-          <a href="admin.html" class="jelly white" style="text-decoration:none;font-size:18px;min-height:56px;padding:10px 16px;display:inline-flex;align-items:center;gap:6px;" title="선생님 관리자 대시보드">🎓 관리자</a>
           <button type="button" id="startBtn" class="jelly tomato" onclick="confirmHeroAndStart()">출발! <span style="font-size:30px">▶</span></button>
         </div>
       </div>
@@ -323,6 +322,7 @@
         <div class="row">
           <label class="mini">교재 PDF 불러오기<input type="file" id="pdfInput" accept="application/pdf" class="hidden"></label>
           <button type="button" class="mini" onclick="resetKnowledgeDB()">기본 문제로</button>
+          <a href="admin.html" target="_blank" class="mini" style="text-decoration:none; display:inline-flex; align-items:center;">🎓 관리자 페이지 ↗</a>
         </div>
         <div id="pdfStatus" style="margin-top:8px"></div>
       </details>
@@ -2230,6 +2230,24 @@
       });
     }
 
+    // 관리자 테스트 모드 즉시 진입
+    function handleMazeAdminTest() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("test") === "1" || params.has("scenario")) {
+        setTimeout(() => {
+          const gate = document.getElementById("studentIdentityGate");
+          if (gate) gate.remove();
+          const scen = params.get("scenario");
+          if (scen && SCENARIOS.some(s => s.id === scen)) {
+            gameState.scenarioChoice = scen;
+            prepareNewScenarioAndMaze();
+          }
+          confirmHeroAndStart();
+          showToast("🧪 [관리자 테스트] 3D 미로 탐험을 시작했습니다!");
+        }, 350);
+      }
+    }
+
     // 안정적이고 즉각적인 게임 엔진 부팅 시스템
     function bootGame() {
       try {
@@ -2244,6 +2262,7 @@
         prepareNewScenarioAndMaze();
         showStartModal();
         setTimeout(() => document.getElementById('loadingScreen').remove(), 250);
+        handleMazeAdminTest();
       } catch (err) {
         console.error("Game initialization error:", err);
         const ls = document.getElementById('loadingScreen');

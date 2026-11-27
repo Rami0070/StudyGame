@@ -9,15 +9,26 @@
   const style = document.createElement('style');
   style.textContent = `
     #studentIdentityGate{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#8ED8FF,#D9F3FF);display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit;color:#3B3355}
-    #studentIdentityGate .sig-card{width:min(560px,100%);background:#FFFBF2;border-radius:28px;padding:28px;box-shadow:0 10px 0 #E9DFC8,0 24px 50px rgba(59,51,85,.2)}
+    #studentIdentityGate .sig-card{position:relative;width:min(560px,100%);background:#FFFBF2;border-radius:28px;padding:30px 28px 24px;box-shadow:0 10px 0 #E9DFC8,0 24px 50px rgba(59,51,85,.2)}
+    #studentIdentityGate .sig-top-admin{position:absolute;top:18px;right:20px;text-decoration:none;font-size:14px;color:#7A7394;padding:6px 12px;border-radius:12px;background:#EDE6D6;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:all .15s;}
+    #studentIdentityGate .sig-top-admin:hover{background:#3B3355;color:#FFFFFF;}
     #studentIdentityGate h2{font-size:clamp(25px,5vw,36px);margin:0 0 8px;text-align:center}
     #studentIdentityGate p{font-size:18px;text-align:center;margin:0 0 22px}
     #studentIdentityGate label{display:block;font-size:17px;margin:12px 0 6px}
     #studentIdentityGate input,#studentIdentityGate select{box-sizing:border-box;width:100%;font:inherit;font-size:19px;padding:13px 14px;border:2px solid #DCD3C0;border-radius:13px;background:white;color:#3B3355}
     #studentIdentityGate .sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-    #studentIdentityGate button{width:100%;margin-top:22px;border:0;border-radius:16px;background:#FF6F59;color:white;font:inherit;font-size:22px;padding:15px;cursor:pointer;box-shadow:0 5px 0 #D9483A}
+    #studentIdentityGate .sig-submit-btn{width:100%;margin-top:20px;border:0;border-radius:16px;background:#FF6F59;color:white;font:inherit;font-size:22px;padding:15px;cursor:pointer;box-shadow:0 5px 0 #D9483A;transition:transform .08s, box-shadow .08s;}
+    #studentIdentityGate .sig-submit-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #D9483A}
     #studentIdentityGate .sig-error{color:#C62828;min-height:22px;margin-top:10px;font-size:15px;text-align:center}
-    @media(max-width:460px){#studentIdentityGate .sig-card{padding:20px}#studentIdentityGate .sig-grid{grid-template-columns:1fr 1fr}}
+    #studentIdentityGate .sig-admin-area{margin-top:16px;padding-top:14px;border-top:1px dashed #DCD3C0;display:flex;justify-content:center;}
+    #studentIdentityGate .sig-admin-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:14px;background:#FFFFFF;border:2px solid #DCD3C0;color:#3B3355;font:inherit;font-size:16px;font-weight:700;text-decoration:none;box-shadow:0 4px 0 #E3DAC6;cursor:pointer;transition:all .15s;}
+    #studentIdentityGate .sig-admin-btn:hover{background:#F0FDF4;border-color:#10B981;color:#047857;transform:translateY(-2px);box-shadow:0 6px 0 #CBD5E1;}
+    #studentIdentityGate .sig-admin-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #CBD5E1;}
+    @media(max-width:460px){
+      #studentIdentityGate .sig-card{padding:20px}
+      #studentIdentityGate .sig-grid{grid-template-columns:1fr 1fr}
+      #studentIdentityGate .sig-top-admin{position:static;display:inline-flex;margin-bottom:10px;}
+    }
   `;
   document.head.appendChild(style);
 
@@ -25,12 +36,31 @@
     try { return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null'); } catch (_) { return null; }
   }
   function mountGate() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isTestMode = urlParams.get('test') === '1' || urlParams.has('stage') || urlParams.has('mode');
+    if (isTestMode) {
+      currentIdentity = {
+        schoolName: '선생님 관리자 테스트',
+        grade: 1,
+        classNumber: 1,
+        studentNumber: 1,
+        isTest: true
+      };
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(currentIdentity));
+      } catch (_) {}
+      const existingGate = document.getElementById('studentIdentityGate');
+      if (existingGate) existingGate.remove();
+      return;
+    }
+
     currentIdentity = readIdentity();
     if (currentIdentity) return;
     const overlay = document.createElement('div');
     overlay.id = 'studentIdentityGate';
     overlay.innerHTML = `
       <form class="sig-card" id="studentIdentityForm">
+        <a href="admin.html" class="sig-top-admin" title="선생님 관리자 대시보드">🎓 관리자 페이지</a>
         <h2>🎒 먼저 이름표를 만들어요!</h2>
         <p>학교와 학급 정보를 입력해 주세요.</p>
         <label for="sig-school">학교명</label>
@@ -41,7 +71,10 @@
           <div><label for="sig-number">번호</label><input id="sig-number" name="studentNumber" type="number" min="1" max="50" step="1" required placeholder="예: 15"></div>
         </div>
         <div class="sig-error" id="sig-error" role="alert"></div>
-        <button type="submit">게임 시작하기</button>
+        <button type="submit" class="sig-submit-btn">게임 시작하기</button>
+        <div class="sig-admin-area">
+          <a href="admin.html" class="sig-admin-btn" title="선생님 관리자 대시보드 바로가기">🎓 선생님 관리자 페이지 접속 ↗</a>
+        </div>
       </form>`;
     document.body.appendChild(overlay);
     document.getElementById('studentIdentityForm').addEventListener('submit', (event) => {

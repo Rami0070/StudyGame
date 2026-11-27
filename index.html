@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#8ED8FF">
   <title>낱말 탐험섬</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
     @font-face {
@@ -548,7 +549,10 @@
     .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .mode { flex-direction: column; min-height: 130px; font-size: 32px; border-radius: 30px; gap: 4px; }
     .mode small { font-size: 18px; opacity: .9; font-family: inherit; font-weight: 400; }
-    .start-foot { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .start-foot { display: flex; flex-direction: column; gap: 14px; align-items: stretch; margin-top: 6px; }
+    .start-foot-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; }
+    .start-foot-actions .jelly { width: 100%; min-height: 60px; font-size: 22px; padding: 12px 20px; border-radius: 24px; box-sizing: border-box; justify-content: center; }
+    .start-hint { color: var(--ink-soft); font-size: 14px; text-align: center; line-height: 1.4; }
 
     #resultScore { font-size: 72px; color: var(--sea-d); line-height: 1; }
     .namebox { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -694,12 +698,11 @@
         <button type="button" class="jelly tomato mode" onclick="startGame('timed')">⏱ 5분 도전<small>5분 동안 많이 모으기</small></button>
       </div>
       <div class="start-foot">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <button type="button" class="jelly grape" onclick="openBook()" style="font-size:22px">📖 낱말 도감 <span id="bookCount"></span></button>
-          <button type="button" class="jelly white" id="homeSoundBtn" onclick="toggleSound()" style="font-size:20px;min-height:56px;padding:10px 18px" aria-label="효과음 켜기/끄기">🔊 효과음 켜짐</button>
-          <a href="admin.html" class="jelly white" style="text-decoration:none;font-size:18px;min-height:56px;padding:10px 18px;display:inline-flex;align-items:center;gap:6px;" title="선생님 관리자 대시보드">🎓 관리자</a>
+        <div class="start-foot-actions">
+          <button type="button" class="jelly grape" onclick="openBook()">📖 낱말 도감 <span id="bookCount" style="font-size:18px;margin-left:6px;background:rgba(255,255,255,0.22);padding:2px 10px;border-radius:999px;"></span></button>
+          <button type="button" class="jelly white" id="homeSoundBtn" onclick="toggleSound()" aria-label="효과음 켜기/끄기">🔊 효과음 켜짐</button>
         </div>
-        <span class="small" style="color:var(--ink-soft);font-size:14px">키보드: WASD/방향키 이동 · 스페이스 점프 · Shift 대쉬 | 태블릿: 화면 터치 조작 · 점프/대쉬 버튼</span>
+        <span class="small start-hint">키보드: WASD/방향키 이동 · 스페이스 점프 · Shift 대쉬 | 태블릿: 화면 터치 조작 · 점프/대쉬 버튼</span>
       </div>
     </div>
   </div>
@@ -730,6 +733,20 @@
       <button type="button" class="jelly sea" onclick="startGame(G.mode)">↻ 처음부터 다시</button>
       <button type="button" class="jelly grape" onclick="toTitle()">⌂ 첫 화면</button>
       <button type="button" class="jelly white" onclick="toggleSound()" id="pauseSoundBtn">🔊 효과음 켜짐</button>
+
+      <!-- 관리자/테스트 모드일 때 표시되는 빠른 스테이지 이동 -->
+      <div id="pauseTestBar" style="display:none; margin-top:10px; padding-top:12px; border-top:2px dashed #DCD3C0; width:100%;">
+        <div style="font-size:15px; font-weight:700; color:#6B7280; margin-bottom:8px; text-align:center;">🧪 관리자 스테이지 즉시 이동</div>
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+          <button type="button" class="jelly white" style="min-height:42px; font-size:14px; padding:4px 6px;" onclick="closePause(); startGame('free');">🌅 1단계</button>
+          <button type="button" class="jelly white" style="min-height:42px; font-size:14px; padding:4px 6px;" onclick="closePause(); startGame('free'); advanceStage(2);">☀️ 2단계</button>
+          <button type="button" class="jelly white" style="min-height:42px; font-size:14px; padding:4px 6px;" onclick="closePause(); startGame('free'); advanceStage(3);">🌇 3단계</button>
+          <button type="button" class="jelly grape" style="min-height:42px; font-size:14px; padding:4px 6px;" onclick="closePause(); enterSharedField();">🌟 다함께</button>
+        </div>
+        <div style="margin-top:8px; text-align:center;">
+          <a href="admin.html" target="_blank" style="font-size:13px; color:#4B5563; text-decoration:none; font-weight:700;">🎓 관리자 페이지 열기 ↗</a>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -5824,123 +5841,323 @@
       // 스테이지 2와 스테이지 3의 돌아다니는 NPC는 삭제 처리됨
     }
 
-    function spawnSharedCompanions() {
+    /* ───────────── 모두 함께 플레이 필드: 실시간 멀티플레이어 동기화 시스템 (Supabase Realtime) ───────────── */
+    const SUPABASE_URL = 'https://rlxqzyeimgvtltodvkju.supabase.co';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_9JTgqy_Utpn2GPv-qKfs1w_gn8r_r5N';
+    let sbClient = null;
+    let mpChannel = null;
+    const remotePlayers = new Map(); // id -> { id, name, hero, mesh, anim, targetPos, targetFace, moving, dashing, inWater, phase, lastSeen }
+    let lastBroadcastTime = 0;
+    const mySessionId = 'u_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+
+    function getSupabaseClient() {
+      if (!sbClient && window.supabase && typeof window.supabase.createClient === 'function') {
+        try {
+          sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        } catch (err) {
+          console.warn('[Multiplayer] Supabase 클라이언트 초기화 실패:', err);
+        }
+      }
+      return sbClient;
+    }
+
+    function getPlayerDisplayName() {
+      let identity = null;
+      try { identity = JSON.parse(sessionStorage.getItem('studywords.student.v1') || 'null'); } catch(_) {}
+      const heroName = getHeroFullName();
+      if (identity && identity.classNumber && identity.studentNumber) {
+        return `${identity.classNumber}반 ${identity.studentNumber}번 ${heroName}`;
+      }
+      return heroName;
+    }
+
+    function createRemotePlayer(pData) {
+      if (!pData || !pData.id || pData.id === mySessionId) return null;
+      if (remotePlayers.has(pData.id)) {
+        return remotePlayers.get(pData.id);
+      }
+      const heroRole = pData.hero || "explorer";
+      const comp = createCompanionHero(heroRole);
+      const mesh = comp.mesh;
+      const displayName = pData.name || "친구";
+      const nameSp = makeNameSprite(displayName, heroRole);
+      mesh.add(nameSp);
+      mesh.userData.nameSprite = nameSp;
+
+      const initX = Number(pData.x) || 0;
+      const initY = Number(pData.y) || 0;
+      const initZ = Number(pData.z) || 4;
+      mesh.position.set(initX, initY, initZ);
+      mesh.rotation.y = Number(pData.face) || 0;
+
       if (!sharedCompanionsGroup) {
         sharedCompanionsGroup = new THREE.Group();
         scene.add(sharedCompanionsGroup);
       }
-      while (sharedCompanionsGroup.children.length > 0) {
-        sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
+      sharedCompanionsGroup.add(mesh);
+
+      const rp = {
+        id: pData.id,
+        name: displayName,
+        hero: heroRole,
+        mesh: mesh,
+        anim: comp.anim,
+        targetPos: new THREE.Vector3(initX, initY, initZ),
+        targetFace: Number(pData.face) || 0,
+        moving: !!pData.moving,
+        dashing: !!pData.dashing,
+        inWater: !!pData.inWater,
+        phase: 0,
+        lastSeen: performance.now()
+      };
+      remotePlayers.set(pData.id, rp);
+      updateMultiplayerOnlinePill();
+      return rp;
+    }
+
+    function updateRemotePlayer(pData) {
+      if (!pData || !pData.id || pData.id === mySessionId) return;
+      let rp = remotePlayers.get(pData.id);
+      if (!rp) {
+        rp = createRemotePlayer(pData);
+        if (!rp) return;
       }
-      sharedCompanionAnimators.length = 0;
+      rp.lastSeen = performance.now();
+      if (pData.x !== undefined && pData.z !== undefined) {
+        rp.targetPos.set(Number(pData.x) || 0, Number(pData.y) || 0, Number(pData.z) || 0);
+      }
+      if (pData.face !== undefined) {
+        rp.targetFace = Number(pData.face) || 0;
+      }
+      rp.moving = !!pData.moving;
+      rp.dashing = !!pData.dashing;
+      rp.inWater = !!pData.inWater;
+    }
 
-      const s = load(), ranks = s.ranks || {};
-      const timedRanks = ranks["timed"] || [];
-      const freeRanks = ranks["free"] || [];
-      const allRanks = [...timedRanks, ...freeRanks];
-
-      const roles = ["explorer", "cyberbot", "wizard", "martial"];
-      const defaultComps = [
-        { role: "wizard", name: "마법사 루나" },
-        { role: "cyberbot", name: "로봇 볼트" },
-        { role: "martial", name: "무술가 카이" },
-        { role: "explorer", name: "탐험가 도로" }
-      ];
-
-      const companionList = [];
-      const myFullName = getHeroFullName();
-      const usedNames = new Set([myFullName]);
-
-      allRanks.forEach(r => {
-        if (r.name && !usedNames.has(r.name) && companionList.length < 5) {
-          usedNames.add(r.name);
-          companionList.push({ role: r.hero || roles[companionList.length % roles.length], name: r.name });
-        }
-      });
-
-      defaultComps.forEach(d => {
-        if (companionList.length < 4 && !usedNames.has(d.name)) {
-          usedNames.add(d.name);
-          companionList.push(d);
-        }
-      });
-
-      const spawnZones = ["village", "plaza", "forest", "park", "center"];
-
-      companionList.forEach((compData, idx) => {
-        const comp = createCompanionHero(compData.role);
-        const mesh = comp.mesh;
-
-        if (mesh.userData.nameSprite) mesh.remove(mesh.userData.nameSprite);
-        const nameSp = makeNameSprite(compData.name, compData.role);
-        mesh.add(nameSp);
-        mesh.userData.nameSprite = nameSp;
-
-        const zoneKey = spawnZones[idx % spawnZones.length];
-        const spot = freeSpot(zoneKey, true);
-        mesh.position.copy(spot);
-        sharedCompanionsGroup.add(mesh);
-
-        const walker = {
-          phase: Math.random() * Math.PI * 2,
-          targetPos: freeSpot(zoneKey, true),
-          speed: 2.8 + Math.random() * 1.2,
-          idleTimer: 0,
-          huntCooldown: 8 + Math.random() * 8
-        };
-
-        sharedCompanionAnimators.push((dt, t) => {
-          comp.anim(dt, t, walker);
-
-          if (walker.idleTimer > 0) {
-            walker.idleTimer -= dt;
-            return;
-          }
-
-          walker.phase += dt * (walker.speed * 2.2);
-          walker.huntCooldown -= dt;
-
-          if (walker.huntCooldown <= 0) {
-            const openCards = G.cards.filter(c => !c.done && c !== G.activeCard);
-            if (openCards.length > 0) {
-              const cToPick = openCards[Math.floor(Math.random() * openCards.length)];
-              walker.targetPos = cToPick.mesh.position.clone();
-            }
-          }
-
-          const dx = walker.targetPos.x - mesh.position.x;
-          const dz = walker.targetPos.z - mesh.position.z;
-          const dist = Math.hypot(dx, dz);
-
-          if (dist > 0.6) {
-            const dirX = dx / dist, dirZ = dz / dist;
-            mesh.position.x += dirX * walker.speed * dt;
-            mesh.position.z += dirZ * walker.speed * dt;
-            mesh.rotation.y = Math.atan2(dirX, dirZ);
-
-            if (walker.huntCooldown <= 0 && dist < 1.4) {
-              const nearbyCard = G.cards.find(c => !c.done && c !== G.activeCard && c.mesh.position.distanceTo(mesh.position) < 1.8);
-              if (nearbyCard) {
-                walker.huntCooldown = 16.0 + Math.random() * 12.0;
-                walker.idleTimer = 1.5;
-                companionCollectCard(compData.role, mesh, nearbyCard);
-                G.got++;
-                updateHud();
-                if (G.got >= 30) {
-                  setTimeout(() => endGame(true), 1500);
-                }
-              }
-            }
-          } else {
-            const nextZone = spawnZones[Math.floor(Math.random() * spawnZones.length)];
-            walker.targetPos = freeSpot(nextZone, true);
-            walker.idleTimer = 1.0 + Math.random() * 2.0;
-            if (walker.huntCooldown <= 0) {
-              walker.huntCooldown = 12.0 + Math.random() * 8.0;
-            }
+    function broadcastMyState(now) {
+      if (!mpChannel || G.mode !== "shared") return;
+      if (now - lastBroadcastTime < 60) return; // 약 16 FPS 주기 동기화
+      lastBroadcastTime = now;
+      try {
+        const isDash = P.isDashing || !!(input.keys.ShiftLeft || input.keys.ShiftRight);
+        mpChannel.send({
+          type: 'broadcast',
+          event: 'move',
+          payload: {
+            id: mySessionId,
+            name: getPlayerDisplayName(),
+            hero: G.hero,
+            x: Number(P.pos.x.toFixed(2)),
+            y: Number(P.pos.y.toFixed(2)),
+            z: Number(P.pos.z.toFixed(2)),
+            face: Number(P.face.toFixed(2)),
+            moving: P.moving,
+            dashing: isDash,
+            inWater: P.inWater
           }
         });
+      } catch (e) {}
+    }
+
+    function updateRemotePlayers(dt, t) {
+      const now = performance.now();
+      remotePlayers.forEach((rp, id) => {
+        // 12초 이상 신호 없으면 퇴장 처리
+        if (now - rp.lastSeen > 12000) {
+          if (rp.mesh && rp.mesh.parent) rp.mesh.parent.remove(rp.mesh);
+          remotePlayers.delete(id);
+          updateMultiplayerOnlinePill();
+          return;
+        }
+
+        // 부드러운 위치 및 각도 보간 (Lerp)
+        rp.mesh.position.lerp(rp.targetPos, Math.min(1, dt * 14));
+        let diff = (rp.targetFace - rp.mesh.rotation.y) % (Math.PI * 2);
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        rp.mesh.rotation.y += diff * Math.min(1, dt * 14);
+
+        // 보행/달리기/수영 애니메이션 재생
+        const U = rp.mesh.userData;
+        if (rp.moving) {
+          const spd = rp.dashing ? 20.0 : (rp.inWater ? 7.0 : 12.0);
+          rp.phase += dt * spd;
+          rp.anim(dt, t, { phase: rp.phase });
+        } else {
+          // 정지 시 자연스러운 대기 호흡 모션
+          if (U.feet && U.feet.length >= 2) {
+            U.feet[0].position.set(-.28, .07, .04);
+            U.feet[1].position.set(.28, .07, .04);
+          }
+          if (U.arms && U.arms.length >= 2) {
+            U.arms[0].rotation.set(0, 0, -.22);
+            U.arms[1].rotation.set(0, 0, .22);
+          }
+          if (U.rig) {
+            U.rig.position.y = Math.sin(t * 2.2) * .015;
+            U.rig.rotation.z = 0;
+          }
+          if (U.head) U.head.rotation.set(0, 0, 0);
+          if (U.nameSprite && U.rig) {
+            U.nameSprite.position.y = 2.15 + U.rig.position.y * .4;
+          }
+        }
       });
+    }
+
+    function handleRemoteCardSolved(payload) {
+      if (!payload) return;
+      let card = (payload.cardIdx !== undefined && G.cards[payload.cardIdx]) ? G.cards[payload.cardIdx] : null;
+      if (!card || (card.word && card.word.word !== payload.word)) {
+        card = G.cards.find(c => !c.done && c.word && c.word.word === payload.word);
+      }
+      if (card && !card.done) {
+        card.done = true;
+        card.flying = 0;
+        sfx("get");
+        const diffCfg = DIFF_CONFIG[card.diff] || DIFF_CONFIG.mid;
+        burst(card.mesh.position.clone().add(new THREE.Vector3(0, 1.3, 0)), diffCfg.ringHex || 0x38BDF8);
+        puff(card.mesh.position, 8);
+      }
+      if (payload.totalGot) {
+        G.got = Math.max(G.got, payload.totalGot);
+      } else {
+        G.got++;
+      }
+      updateHud();
+      const pName = payload.playerName || "친구";
+      notice(`✨ ${pName}님이 문제카드를 획득했습니다! (총 ${G.got} / 30장)`);
+      if (G.got >= 30) {
+        setTimeout(() => endGame(true), 1500);
+      }
+    }
+
+    function updateMultiplayerOnlinePill() {
+      if (G.mode !== "shared") return;
+      const count = remotePlayers.size + 1;
+      const sp = $("stagePillText");
+      if (sp) sp.textContent = `다 함께 필드 (👥 ${count}명)`;
+    }
+
+    function initMultiplayerSharedField() {
+      leaveMultiplayerSharedField();
+
+      if (!sharedCompanionsGroup) {
+        sharedCompanionsGroup = new THREE.Group();
+        scene.add(sharedCompanionsGroup);
+      }
+
+      const client = getSupabaseClient();
+      if (!client) {
+        console.warn('[Multiplayer] Supabase 클라이언트를 찾을 수 없어 오프라인 단독 모드로 진행합니다.');
+        updateMultiplayerOnlinePill();
+        return;
+      }
+
+      const roomName = 'word-island-shared-field';
+      try {
+        mpChannel = client.channel(roomName, {
+          config: {
+            broadcast: { ack: false, self: false },
+            presence: { key: mySessionId }
+          }
+        });
+
+        mpChannel
+          .on('presence', { event: 'sync' }, () => {
+            const state = mpChannel.presenceState();
+            const currentIds = new Set();
+            for (const key in state) {
+              const list = state[key] || [];
+              list.forEach(p => {
+                if (p.id && p.id !== mySessionId) {
+                  currentIds.add(p.id);
+                  if (!remotePlayers.has(p.id)) {
+                    createRemotePlayer(p);
+                  }
+                }
+              });
+            }
+            remotePlayers.forEach((rp, id) => {
+              if (!currentIds.has(id)) {
+                if (rp.mesh && rp.mesh.parent) rp.mesh.parent.remove(rp.mesh);
+                remotePlayers.delete(id);
+              }
+            });
+            updateMultiplayerOnlinePill();
+          })
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            (newPresences || []).forEach(p => {
+              if (p.id && p.id !== mySessionId) {
+                createRemotePlayer(p);
+                notice(`👋 ${p.name || '친구'}님이 다 함께 필드에 참여했습니다!`);
+              }
+            });
+            updateMultiplayerOnlinePill();
+          })
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+            (leftPresences || []).forEach(p => {
+              if (p.id && remotePlayers.has(p.id)) {
+                const rp = remotePlayers.get(p.id);
+                if (rp.mesh && rp.mesh.parent) rp.mesh.parent.remove(rp.mesh);
+                remotePlayers.delete(p.id);
+              }
+            });
+            updateMultiplayerOnlinePill();
+          })
+          .on('broadcast', { event: 'move' }, ({ payload }) => {
+            updateRemotePlayer(payload);
+          })
+          .on('broadcast', { event: 'card_solved' }, ({ payload }) => {
+            if (payload && payload.id !== mySessionId) {
+              handleRemoteCardSolved(payload);
+            }
+          })
+          .on('broadcast', { event: 'emote' }, ({ payload }) => {
+            if (payload && payload.id !== mySessionId && remotePlayers.has(payload.id)) {
+              const rp = remotePlayers.get(payload.id);
+              if (rp && rp.mesh) {
+                puff(rp.mesh.position.clone().add(new THREE.Vector3(0, 1.8, 0)), 8);
+                sfx("tap");
+              }
+            }
+          })
+          .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+              console.info('[Multiplayer] Realtime 채널 연결 완료:', roomName);
+              await mpChannel.track({
+                id: mySessionId,
+                name: getPlayerDisplayName(),
+                hero: G.hero,
+                x: Number(P.pos.x.toFixed(2)),
+                y: Number(P.pos.y.toFixed(2)),
+                z: Number(P.pos.z.toFixed(2)),
+                face: Number(P.face.toFixed(2)),
+                moving: false
+              });
+              updateMultiplayerOnlinePill();
+            }
+          });
+      } catch (err) {
+        console.error('[Multiplayer] Realtime 채널 생성 실패:', err);
+      }
+    }
+
+    function leaveMultiplayerSharedField() {
+      if (mpChannel) {
+        try {
+          mpChannel.untrack();
+          mpChannel.unsubscribe();
+        } catch(e) {}
+        mpChannel = null;
+      }
+      if (sharedCompanionsGroup) {
+        while (sharedCompanionsGroup.children.length > 0) {
+          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
+        }
+      }
+      remotePlayers.clear();
+      updateMultiplayerOnlinePill();
     }
 
     // 머리 위 화살표: 가장 가까운 카드 방향
@@ -6034,10 +6251,12 @@
             if (colliders.some(c => Math.hypot(c.x - x, c.z - zz) < c.r + 1.3)) continue;
             if (boxes.some(b => x > b.minx - 1.3 && x < b.maxx + 1.3 && zz > b.minz - 1.3 && zz < b.maxz + 1.3)) continue;
             if (G.cards.some(c => !c.done && c.mesh && c.mesh.position.distanceTo(new THREE.Vector3(x, 0, zz)) < 4.8)) continue;
-            return new THREE.Vector3(x, 0, zz);
+            const gy = groundAt(x, zz, 4);
+            return new THREE.Vector3(x, gy, zz);
           }
           const safeAngle = Math.random() * Math.PI * 2;
-          return new THREE.Vector3(Math.cos(safeAngle) * 9.0, 0, Math.sin(safeAngle) * 9.0);
+          const sx = Math.cos(safeAngle) * 9.0, sz = Math.sin(safeAngle) * 9.0;
+          return new THREE.Vector3(sx, groundAt(sx, sz, 4), sz);
         }
       }
       const z = ZONES[zoneKey] || ZONES.forest || { x: -34, z: -30, r: 18, rMin: 3.5, rMax: 16 };
@@ -6054,11 +6273,13 @@
         if (colliders.some(c => Math.hypot(c.x - x, c.z - zz) < c.r + 1.3)) continue;
         if (boxes.some(b => x > b.minx - 1.3 && x < b.maxx + 1.3 && zz > b.minz - 1.3 && zz < b.maxz + 1.3)) continue;
         if (G.cards.some(c => !c.done && c.mesh && c.mesh.position.distanceTo(new THREE.Vector3(x, 0, zz)) < 4.8)) continue;
-        return new THREE.Vector3(x, 0, zz);
+        const gy = groundAt(x, zz, 4);
+        return new THREE.Vector3(x, gy, zz);
       }
       const safeAngle = Math.random() * Math.PI * 2;
       const safeR = (rMin + rMax) * 0.5;
-      return new THREE.Vector3(z.x + Math.cos(safeAngle) * safeR, 0, z.z + Math.sin(safeAngle) * safeR);
+      const fx = z.x + Math.cos(safeAngle) * safeR, fz = z.z + Math.sin(safeAngle) * safeR;
+      return new THREE.Vector3(fx, groundAt(fx, fz, 4), fz);
     }
 
     /* ───────────── 스테이지 시스템 (총 3 스테이지) ───────────── */
@@ -6839,7 +7060,7 @@
           G.locked = true;
           fb.textContent = "앗! 카드가 도망갔어요! 다시 찾아봐요";
           G.missed.add(card.word.word);
-          setTimeout(() => { card.mesh.position.copy(freeSpot(card.zone)); closeQuiz(false); emote("sad"); notice(`${ZONES[card.zone].name}에서 다시 찾아요!`); }, 1300);
+          setTimeout(() => { card.mesh.position.copy(freeSpot(card.zone, G.mode === "shared")); closeQuiz(false); emote("sad"); notice(`${ZONES[card.zone].name}에서 다시 찾아요!`); }, 1300);
         } else {
           fb.textContent = "다시 골라 볼까요?";
           showHint(true);
@@ -6860,6 +7081,22 @@
       save({ book });
       emote(card.diff === "high" ? "cheer" : G.combo >= 3 ? "dance" : "happy");
       if (G.mode === "shared") {
+        if (mpChannel) {
+          try {
+            const cardIdx = G.cards.indexOf(card);
+            mpChannel.send({
+              type: 'broadcast',
+              event: 'card_solved',
+              payload: {
+                id: mySessionId,
+                cardIdx: cardIdx,
+                word: card.word ? card.word.word : '',
+                playerName: getPlayerDisplayName(),
+                totalGot: G.got
+              }
+            });
+          } catch(e) {}
+        }
         if (G.got >= 30) {
           setTimeout(() => endGame(true), 1500);
         } else {
@@ -6895,7 +7132,8 @@
       if (G.mode === "shared") {
         $("cardText").textContent = `${G.got} / 30`;
         const sp = $("stagePillText");
-        if (sp) sp.textContent = `다 함께 필드 (${G.got} / 30)`;
+        const count = (remotePlayers ? remotePlayers.size : 0) + 1;
+        if (sp) sp.textContent = `다 함께 필드 (👥 ${count}명)`;
       } else {
         $("cardText").textContent = `${G.stageGot} / 10`;
         const sp = $("stagePillText");
@@ -7315,6 +7553,15 @@
       if (type === "cheer") burst(P.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), 0xFFC531);
       if (type === "sad") sfx("escape"); else sfx("tap");
       closeEmoteMenu();
+      if (G.mode === "shared" && mpChannel) {
+        try {
+          mpChannel.send({
+            type: 'broadcast',
+            event: 'emote',
+            payload: { id: mySessionId, type: type }
+          });
+        } catch(e) {}
+      }
     }
     function animateHero(dt) {
       const U = hero.userData, t = clock.elapsedTime;
@@ -7449,9 +7696,9 @@
         m.userData.ring.scale.setScalar(1 + Math.sin(t * 3 + i) * .12);
         const dx = m.position.x - P.pos.x, dz = m.position.z - P.pos.z, d = Math.hypot(dx, dz);
         if (d < nd) { nd = d; near = c; }
-        // 중앙광장(ZONES.center) 내부에서는 문제가 팝업되지 않도록 방지
-        const inCenterPlaza = Math.hypot(P.pos.x - ZONES.center.x, P.pos.z - ZONES.center.z) < ZONES.center.r;
-        if (!inCenterPlaza && G.playing && !G.paused && d < 1.5 && Math.abs(P.pos.y - m.position.y) < 1.6 && performance.now() > c.cool) openQuiz(c);
+        // 중앙광장(ZONES.center) 내부에서는 일반 모드일 때만 문제 팝업 제외 (공유 필드 모드는 전체 활성화)
+        const inCenterPlaza = (G.mode !== "shared") && (Math.hypot(P.pos.x - ZONES.center.x, P.pos.z - ZONES.center.z) < ZONES.center.r);
+        if (!inCenterPlaza && G.playing && !G.paused && d < 1.85 && Math.abs(P.pos.y - m.position.y) < 2.5 && performance.now() > c.cool) openQuiz(c);
       });
       // 가장 가까운 카드 쪽 화살표
       arrow.visible = false;
@@ -7512,8 +7759,9 @@
       }
       else if (hero) animateHero(dt);
       updateWorld(t, dt);
-      if (G.mode === "shared" && sharedCompanionAnimators.length > 0) {
-        sharedCompanionAnimators.forEach(fn => fn(dt, t));
+      if (G.mode === "shared") {
+        broadcastMyState(performance.now());
+        updateRemotePlayers(dt, t);
       }
       updatePinSpotlight(t);
       updateCards(dt, t);
@@ -7583,12 +7831,7 @@
         enterSharedField();
         return;
       }
-      if (sharedCompanionsGroup) {
-        while (sharedCompanionsGroup.children.length > 0) {
-          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
-        }
-        sharedCompanionAnimators.length = 0;
-      }
+      leaveMultiplayerSharedField();
       ["startModal", "resultModal", "pauseModal", "quizModal", "bookModal"].forEach(hide);
       G.mode = mode; G.score = 0; G.combo = 0; G.got = 0; G.stage = 1; G.stageGot = 0; G.stageHintsRemaining = 5; G.total = 30; G.time = 0; G.totalWrongAttempts = 0; G.missed = new Set(); G.learned = []; G.saved = false;
       scene.remove(hero); hero = makeHero(G.hero); scene.add(hero);
@@ -7606,12 +7849,6 @@
       sfx("get");
     }
     function enterSharedField() {
-      if (sharedCompanionsGroup) {
-        while (sharedCompanionsGroup.children.length > 0) {
-          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
-        }
-        sharedCompanionAnimators.length = 0;
-      }
       ["startModal", "resultModal", "pauseModal", "quizModal", "bookModal"].forEach(hide);
       G.mode = "shared";
       G.score = 0;
@@ -7639,7 +7876,7 @@
 
       setStageVisuals(1);
       spawnCards();
-      spawnSharedCompanions();
+      initMultiplayerSharedField();
 
       $("timerPill").classList.add("hidden");
       updateHud();
@@ -7647,20 +7884,25 @@
       G.paused = false;
       $("app").classList.add("play");
 
-      showStageBanner("다 함께 필드 모험!", "필드 전체에 퍼진 30개의 문제 카드를 모두 모아보세요!");
-      notice("✨ 친구들과 함께 한 필드에 모였습니다! 30개의 카드를 찾아보세요!");
+      showStageBanner("다 함께 필드 모험!", "다른 친구들과 함께 30개의 문제 카드를 모두 모아보세요!");
+      notice("✨ 다른 친구들과 같은 필드에 접속했습니다! 함께 힘을 합쳐 카드를 찾아보세요!");
       sfx("get");
     }
-    function openPause() { if (!G.playing || isOpen("quizModal")) return; G.paused = true; syncSound(); show("pauseModal"); }
+    function openPause() {
+      if (!G.playing || isOpen("quizModal")) return;
+      G.paused = true;
+      syncSound();
+      const testBar = $("pauseTestBar");
+      if (testBar) {
+        const params = new URLSearchParams(window.location.search);
+        testBar.style.display = (params.get("test") === "1" || params.has("stage") || params.has("mode")) ? "block" : "none";
+      }
+      show("pauseModal");
+    }
     function closePause() { hide("pauseModal"); G.paused = false; }
     function toTitle() {
       G.playing = false; G.paused = true;
-      if (sharedCompanionsGroup) {
-        while (sharedCompanionsGroup.children.length > 0) {
-          sharedCompanionsGroup.remove(sharedCompanionsGroup.children[0]);
-        }
-        sharedCompanionAnimators.length = 0;
-      }
+      leaveMultiplayerSharedField();
       $("app").classList.remove("play");
       ["pauseModal", "resultModal", "quizModal"].forEach(hide);
       showTitle();
@@ -7668,6 +7910,9 @@
 
     function endGame(all) {
       if (!G.playing) return;
+      if (G.mode === "shared") {
+        leaveMultiplayerSharedField();
+      }
       G.playing = false; G.paused = true;
       if (typeof window.submitStudyGameRecord === "function") {
         window.submitStudyGameRecord({ gameSlug: "word-island", score: G.score, durationSeconds: G.mode === "timed" ? Math.min(G.time, TIME_LIMIT) : G.time, attempts: G.totalWrongAttempts || 0, details: { mode: G.mode, cardsCollected: G.got, totalCards: G.total, stage: G.stage } });
@@ -7768,6 +8013,39 @@
       });
     }
 
+    /* ───────────── 관리자 테스트 모드 즉시 진입 ───────────── */
+    function handleAdminTestLaunch() {
+      const params = new URLSearchParams(window.location.search);
+      const isTest = params.get("test") === "1" || params.has("stage") || params.has("mode");
+      if (!isTest) return;
+
+      const stageParam = params.get("stage");
+      const modeParam = params.get("mode");
+
+      setTimeout(() => {
+        const gate = document.getElementById("studentIdentityGate");
+        if (gate) gate.remove();
+
+        if (modeParam === "shared" || stageParam === "shared") {
+          enterSharedField();
+          notice("🧪 [관리자 테스트] '다 함께 플레이' 필드에 즉시 진입했습니다! (30문제)");
+        } else {
+          const targetStage = parseInt(stageParam, 10) || 1;
+          const targetMode = modeParam === "timed" ? "timed" : "free";
+          startGame(targetMode);
+          if (targetStage >= 2 && targetStage <= 3) {
+            advanceStage(targetStage);
+          }
+          const stageNames = {
+            1: "스테이지 1 (아침 마을)",
+            2: "스테이지 2 (학교·운동장)",
+            3: "스테이지 3 (노을 놀이터)"
+          };
+          notice(`🧪 [관리자 테스트] ${stageNames[targetStage] || '스테이지 ' + targetStage}에 즉시 진입했습니다!`);
+        }
+      }, 350);
+    }
+
     /* ───────────── 시작 ───────────── */
     async function boot() {
       try {
@@ -7790,6 +8068,7 @@
           const ls = $("loadingScreen");
           if (ls) ls.remove();
         }, 200);
+        handleAdminTestLaunch();
       } catch (err) {
         console.error(err);
         $("loadingScreen").innerHTML = "3D 화면을 열지 못했어요.<br><span class='small' style='font-size:16px'>인터넷 연결을 확인하고 새로고침해 주세요.</span>";
