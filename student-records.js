@@ -9,9 +9,7 @@
   const style = document.createElement('style');
   style.textContent = `
     #studentIdentityGate{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#8ED8FF,#D9F3FF);display:flex;align-items:center;justify-content:center;padding:20px;font-family:inherit;color:#3B3355}
-    #studentIdentityGate .sig-card{position:relative;width:min(560px,100%);background:#FFFBF2;border-radius:28px;padding:30px 28px 24px;box-shadow:0 10px 0 #E9DFC8,0 24px 50px rgba(59,51,85,.2)}
-    #studentIdentityGate .sig-top-admin{position:absolute;top:18px;right:20px;text-decoration:none;font-size:14px;color:#7A7394;padding:6px 12px;border-radius:12px;background:#EDE6D6;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:all .15s;}
-    #studentIdentityGate .sig-top-admin:hover{background:#3B3355;color:#FFFFFF;}
+    #studentIdentityGate .sig-card{position:relative;width:min(560px,100%);background:#FFFBF2;border-radius:28px;padding:32px 28px 24px;box-shadow:0 10px 0 #E9DFC8,0 24px 50px rgba(59,51,85,.2)}
     #studentIdentityGate h2{font-size:clamp(25px,5vw,36px);margin:0 0 8px;text-align:center}
     #studentIdentityGate p{font-size:18px;text-align:center;margin:0 0 22px}
     #studentIdentityGate label{display:block;font-size:17px;margin:12px 0 6px}
@@ -27,7 +25,6 @@
     @media(max-width:460px){
       #studentIdentityGate .sig-card{padding:20px}
       #studentIdentityGate .sig-grid{grid-template-columns:1fr 1fr}
-      #studentIdentityGate .sig-top-admin{position:static;display:inline-flex;margin-bottom:10px;}
     }
   `;
   document.head.appendChild(style);
@@ -60,7 +57,6 @@
     overlay.id = 'studentIdentityGate';
     overlay.innerHTML = `
       <form class="sig-card" id="studentIdentityForm">
-        <a href="admin.html" class="sig-top-admin" title="선생님 관리자 대시보드">🎓 관리자 페이지</a>
         <h2>🎒 먼저 이름표를 만들어요!</h2>
         <p>학교와 학급 정보를 입력해 주세요.</p>
         <label for="sig-school">학교명</label>
